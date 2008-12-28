@@ -51,6 +51,7 @@ implementation {
     components ActiveMessageC;
     components new AMSenderC(AM_CYNAR);
     components new AMReceiverC(AM_CYNAR);
+    components BuffersP;
 
     /* Forwarded from GlueDispatcher */
     NxtCommands = GlueDispatcher;
@@ -68,6 +69,7 @@ implementation {
 
     NxtCommandsP.Resource -> Uart0Access.Resource;
     NxtCommandsP.UartStream -> Uart0Access.UartStream;
+    NxtCommandsP.Buffers -> BuffersP.Buffers;
 
     /* Active message forwarded */
     RadioAMPacket = ActiveMessageC;
