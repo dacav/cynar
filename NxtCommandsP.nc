@@ -23,14 +23,9 @@
 module NxtCommandsP {
 
     provides interface NxtCommands as NxtComm;
-    uses {
-        interface Resource;
-        interface UartStream;
-        interface Buffers;
-    }
+    uses interface Buffers;
 
 }
-
 
 implementation {
 
@@ -46,137 +41,10 @@ implementation {
     
         MOTOR_0             = 1,            /* Motor 0 selected */
         MOTOR_1             = 2,            /* Motor 1 selected */
-        MOTOR_2             = 4             /* Motor 2 selected */
+        MOTOR_2             = 4,            /* Motor 2 selected */
+
+        MOTOR_MOVEMENT      = 5
     } variant_t;
-
-    error_t cmd_build_halt(uint8_t *buffer, size_t len);
-    error_t cmd_build_rotate_time(uint8_t *buffer, size_t len, int8_t speed,
-                                  uint32_t time, bool brake, uint8_t motors);
-    error_t cmd_build_rotate_angle(uint8_t *buffer, size_t len, int8_t speed,
-                                   uint32_t angle, bool brake, uint8_t motors);
-    error_t cmd_build_move(uint8_t *buffer, size_t len, int8_t speed);
-    error_t cmd_build_turn(uint8_t *buffer, size_t len, int8_t speed,
-                           uint32_t degrees);
-    error_t cmd_build_stop(uint8_t *buffer, size_t len, uint8_t motors,
-                           bool brake);
-
-
-    #define BUFSIZE 6
-
-    static uint8_t uart_buffer[BUFSIZE];
-    static enum {
-        STATUS_READY,
-        STATUS_BUSY,
-        STATUS_TRANSFER
-    } status;
-
-    command error_t NxtComm.halt()
-    {
-        atomic {
-            if (status != STATUS_READY)
-                return EBUSY;
-            status = STATUS_BUSY;
-        }
-        cmd_build_halt(uart_buffer, BUFSIZE);
-        call Resource.request();
-        return SUCCESS;
-    }
-
-    command error_t NxtComm.rotateTime(int8_t speed, uint32_t time,
-                                       bool brake, uint8_t motors)
-    {
-        atomic {
-            if (status != STATUS_READY)
-                return EBUSY;
-            status = STATUS_BUSY;
-        }
-        cmd_build_rotate_time(uart_buffer, BUFSIZE, speed, time, brake, motors);
-        call Resource.request();
-        return SUCCESS;
-    }
-
-    command error_t NxtComm.rotateAngle(int8_t speed, uint32_t angle,
-                                        bool brake, uint8_t motors)
-    {
-        atomic {
-            if (status != STATUS_READY)
-                return EBUSY;
-            status = STATUS_BUSY;
-        }
-        cmd_build_rotate_angle(uart_buffer, BUFSIZE, speed, angle, brake, motors);
-        call Resource.request();
-        return SUCCESS;
-    }
-
-    command error_t NxtComm.stopRotation(bool brake, uint8_t motors)
-    {
-        atomic {
-            if (status != STATUS_READY)
-                return EBUSY;
-            status = STATUS_BUSY;
-        }
-        cmd_build_stop(uart_buffer, BUFSIZE, motors, brake);
-        call Resource.request();
-        return SUCCESS;
-    }
-
-    command error_t NxtComm.move(int8_t speed)
-    {
-        atomic {
-            if (status != STATUS_READY)
-                return EBUSY;
-            status = STATUS_BUSY;
-        }
-        cmd_build_move(uart_buffer, BUFSIZE, speed);
-        call Resource.request();
-        return SUCCESS;
-    }
-
-    command error_t NxtComm.turn(int8_t speed, uint32_t degrees)
-    {
-        atomic {
-            if (status != STATUS_READY)
-                return EBUSY;
-            status = STATUS_BUSY;
-        }
-        cmd_build_turn(uart_buffer, BUFSIZE, speed, degrees);
-        call Resource.request();
-        return SUCCESS;
-    }
-
-    command error_t NxtComm.stop(bool brake)
-    {
-        atomic {
-            if (status != STATUS_READY)
-                return EBUSY;
-            status = STATUS_BUSY;
-        }
-        cmd_build_stop(uart_buffer, BUFSIZE, MOTOR_0 | MOTOR_2, brake);
-        call Resource.request();
-        return SUCCESS;
-    }
-
-    event void Resource.granted()
-    {
-        atomic {
-            status = STATUS_TRANSFER;
-        }
-        call UartStream.send(uart_buffer, BUFSIZE);
-    }
-
-    async event void UartStream.sendDone(uint8_t *buf, uint16_t len,
-                                         error_t error)
-    {
-    }
-
-    async event void UartStream.receivedByte(uint8_t byte)
-    {
-    }
-
-    async event void UartStream.receiveDone(uint8_t *buf, uint16_t len,
-                                            error_t error)
-    {
-    }
 
     /* Generic mask for actions */
     #define MSK_ACTION(cmd)         ((cmd) & 0xe0)
@@ -203,7 +71,7 @@ implementation {
         GET                 = (4<<5),       /* Data retriving */
     } action_t;
 
-    error_t cmd_build_halt(uint8_t *buffer, size_t len)
+    command error_t NxtComm.halt(uint8_t *buffer, size_t len)
     {
         if (len < 1)
             return SUCCESS;
@@ -211,8 +79,8 @@ implementation {
         return FAIL;
     }
 
-    error_t cmd_build_rotate_time(uint8_t *buffer, size_t len, int8_t speed,
-                                  uint32_t time, bool brake, uint8_t motors)
+    command error_t NxtComm.rotateTime(uint8_t *buffer, size_t len, int8_t speed,
+                                       uint32_t time, bool brake, uint8_t motors)
     {
         uint32_t offset;
 
@@ -226,8 +94,8 @@ implementation {
         return SUCCESS;
     }
 
-    error_t cmd_build_rotate_angle(uint8_t *buffer, size_t len, int8_t speed,
-                                   uint32_t angle, bool brake, uint8_t motors)
+    command error_t NxtComm.rotateAngle(uint8_t *buffer, size_t len, int8_t speed,
+                                        uint32_t angle, bool brake, uint8_t motors)
     {
         uint32_t offset;
 
@@ -241,38 +109,48 @@ implementation {
         return SUCCESS;
     }
 
-    error_t cmd_build_move(uint8_t *buffer, size_t len, int8_t speed)
+    command error_t NxtComm.stopRotation(uint8_t *buffer, size_t len, bool brake,
+                                         uint8_t motors)
+    {
+        if (len < 1)
+            return FAIL;
+        buffer[0] = STOP | motors | (brake ? BRAKE : NOBRAKE);
+        return SUCCESS;
+    }
+
+    command error_t NxtComm.move(uint8_t *buffer, size_t len, int8_t speed)
     {
          uint32_t offset;
 
         offset = 0;
         if (len < 2)
             return SUCCESS;
-        *buffer = MOVE | MOTOR_0 | MOTOR_2 | MOV_RUN;
+        *buffer = MOVE | MOTOR_MOVEMENT | MOV_RUN;
         buffer++;
         call Buffers.build(buffer, "b", &offset, speed);
         return FAIL;
     }
 
-    error_t cmd_build_turn(uint8_t *buffer, size_t len, int8_t speed, uint32_t degrees)
+    command error_t NxtComm.turn(uint8_t *buffer, size_t len, int8_t speed,
+                                 uint32_t degrees)
     {
         uint32_t offset;
 
         offset = 0;
         if (len < 2)
             return FAIL;
-        *buffer = MOVE | MOTOR_0 | MOTOR_2 | MOV_TURN;
+        *buffer = MOVE | MOTOR_MOVEMENT | MOV_TURN;
         buffer++;
         call Buffers.build(buffer, "bw", &offset, speed);
         call Buffers.build(buffer, "bw", &offset, degrees);
         return SUCCESS;
     }
 
-    error_t cmd_build_stop(uint8_t *buffer, size_t len, uint8_t motors, bool brake)
+    command error_t NxtComm.stop(uint8_t *buffer, size_t len, bool brake)
     {
         if (len < 1)
             return FAIL;
-        buffer[0] = STOP | motors | (brake ? BRAKE : NOBRAKE);
+        buffer[0] = STOP | MOTOR_MOVEMENT | (brake ? BRAKE : NOBRAKE);
         return SUCCESS;
     }
 

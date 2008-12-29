@@ -35,14 +35,8 @@ module DispatcherP {
 
     uses {
 
-        /* Interfaces required for the radio-channel communication: they
-         * will manage Uart0 and CC2420 interleavings if required, and
-         * simply forwarded when possible (by keeping a single point of
-         * wiring the code will be a little more clean).
-         */
-        interface Boot;
-
         interface NxtCommands as SubNxtComm;
+        interface NxtTransmitter;
 
         interface SplitControl as SubSplitControl;
         interface AMSend as SubAMSend;
@@ -54,8 +48,39 @@ module DispatcherP {
 
 implementation {
 
-    event void Boot.booted() {
-        
+    typedef enum {
+        STATUS_INIT = 0,
+        STATUS_RADIO,
+        STATUS_SHUTDOWN
+    } disp_status_t;
+
+    static disp_status_t status;
+
+    command error_t RadioControl.start()
+    {
+        atomic {
+            if (status != STATUS_INIT && status != STATUS_RADIO) {
+                return EBUSY;
+            }
+        }
+        return call SubSplitControl.start();
+    }
+
+    command error_t RadioControl.stop()
+    {
+        error_t e;
+
+        atomic {
+            if (status == STATUS_INIT)
+                return EALREADY;
+            if (status != STATUS_RADIO)
+                return EBUSY;
+        }
+        e = call SubSplitControl.stop();
+        if (e == SUCCESS) {
+            atomic status = STATUS_SHUTDOWN;
+        }
+        return e;
     }
 
     command error_t RadioAMSend.send(am_addr_t addr, message_t* msg,
@@ -71,86 +96,85 @@ implementation {
     {
     }
 
-    event void SubSplitControl.startDone(error_t e)
+    event void SubSplitControl.startDone(error_t error)
     {
+        if (error == SUCCESS) {
+            atomic {
+                status = STATUS_RADIO;
+            }
+        }
+        signal RadioControl.startDone(error);
     }
 
-    event void SubSplitControl.stopDone(error_t e)
+    event void SubSplitControl.stopDone(error_t error)
     {
+        disp_status_t s;
+
+        atomic s = status;
+        if (s == STATUS_RADIO) {
+            /* Shutdding down */
+            if (error == SUCCESS) {
+                atomic status = STATUS_INIT;
+            }
+            signal RadioControl.stopDone(error);
+        }
     }
 
-    event message_t * SubReceive.receive(message_t *msg, void *payload,
-                                         uint8_t len)
+    event message_t *SubReceive.receive(message_t *msg, void *payload,
+                                        uint8_t len)
     {
         return msg;
     }
 
-    event void SubNxtComm.done(error_t e)
-    {
-    }
-
     command uint8_t RadioAMSend.maxPayloadLength()
     {
-        return call SubAMSend.maxPayloadLength();
     }
 
-    command void* RadioAMSend.getPayload(message_t* msg, uint8_t len)
+    command void *RadioAMSend.getPayload(message_t* msg, uint8_t len)
     {
-        return call SubAMSend.getPayload(msg,len);
     }
 
-    command error_t RadioControl.start()
+    command error_t NxtComm.halt(uint8_t *buffer, size_t len)
     {
-
+        return FAIL;
     }
 
-    command error_t RadioControl.stop()
+    command error_t NxtComm.rotateTime(uint8_t *buffer, size_t len, int8_t speed,
+                                       uint32_t time, bool brake, uint8_t motors)
     {
-
+        return FAIL;
     }
 
-    command error_t NxtComm.halt()
+    command error_t NxtComm.rotateAngle(uint8_t *buffer, size_t len, int8_t speed,
+                                        uint32_t angle, bool brake, uint8_t motors)
     {
-        call SubNxtComm.halt();
-        return SUCCESS;
+        return FAIL;
     }
 
-    command error_t NxtComm.rotateTime(int8_t speed, uint32_t time,
-                                       bool brake, uint8_t motors)
+    command error_t NxtComm.stopRotation(uint8_t *buffer, size_t len, bool brake,
+                                         uint8_t motors)
     {
-        call SubNxtComm.rotateTime(speed, time, brake, motors);
-        return SUCCESS;
+        return FAIL;
     }
 
-    command error_t NxtComm.rotateAngle(int8_t speed, uint32_t angle,
-                                        bool brake, uint8_t motors)
+    command error_t NxtComm.move(uint8_t *buffer, size_t len, int8_t speed)
     {
-        call SubNxtComm.rotateAngle(speed, angle, brake, motors);
-        return SUCCESS;
+        return FAIL;
     }
 
-    command error_t NxtComm.stopRotation(bool brake, uint8_t motors)
+    command error_t NxtComm.turn(uint8_t *buffer, size_t len, int8_t speed,
+                                 uint32_t degrees)
     {
-        call SubNxtComm.stopRotation(brake, motors);
-        return SUCCESS;
+        return FAIL;
     }
 
-    command error_t NxtComm.move(int8_t speed)
+    command error_t NxtComm.stop(uint8_t *buffer, size_t len, bool brake)
     {
-        call SubNxtComm.move(speed);
-        return SUCCESS;
+        return FAIL;
     }
 
-    command error_t NxtComm.turn(int8_t speed, uint32_t degrees)
+    event void NxtTransmitter.done(uint8_t *buffer, size_t len, error_t err)
     {
-        call SubNxtComm.turn(speed, degrees);
-        return SUCCESS;
-    }
-
-    command error_t NxtComm.stop(bool brake)
-    {
-        call SubNxtComm.stop(brake);
-        return SUCCESS;
     }
 
 }

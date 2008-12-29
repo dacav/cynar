@@ -33,12 +33,10 @@ module CynarTestP {
 
 implementation {
 
-    event void Boot.booted() {
-        call NxtCommands.halt();        
-    }
-
-    event void NxtCommands.done(error_t e)
+    event void Boot.booted()
     {
+        uint8_t buffer[6];
+        call NxtCommands.halt(buffer, 6);
     }
 
 }

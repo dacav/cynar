@@ -22,22 +22,23 @@
 
 interface NxtCommands {
 
-    command error_t halt();
+    command error_t halt(uint8_t *buffer, size_t len);
 
-    command error_t rotateTime(int8_t speed, uint32_t time, bool brake,
-                               uint8_t motors);
+    command error_t rotateTime(uint8_t *buffer, size_t len, int8_t speed,
+                               uint32_t time, bool brake, uint8_t motors);
 
-    command error_t rotateAngle(int8_t speed, uint32_t angle, bool brake,
-                                uint8_t motors);
+    command error_t rotateAngle(uint8_t *buffer, size_t len, int8_t speed,
+                                uint32_t angle, bool brake, uint8_t motors);
 
-    command error_t stopRotation(bool brake, uint8_t motors);
+    command error_t stopRotation(uint8_t *buffer, size_t len, bool brake,
+                                 uint8_t motors);
 
-    command error_t move(int8_t speed);
+    command error_t move(uint8_t *buffer, size_t len, int8_t speed);
 
-    command error_t turn(int8_t speed, uint32_t degrees);
+    command error_t turn(uint8_t *buffer, size_t len, int8_t speed,
+                         uint32_t degrees);
 
-    command error_t stop(bool brake);
+    command error_t stop(uint8_t *buffer, size_t len, bool brake);
 
-    event void done(error_t err);
 }
 

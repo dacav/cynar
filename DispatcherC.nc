@@ -29,6 +29,7 @@ enum {
 configuration DispatcherC {
 
     provides {
+
         /* Nxt communication (through Uart0) */
         interface NxtCommands;
 
@@ -38,38 +39,35 @@ configuration DispatcherC {
         interface Receive as RadioReceive;
         interface Packet as RadioPacket;
         interface AMPacket as RadioAMPacket;
+
     }
-    uses {
-        interface Boot;
-    }
+
 }
 implementation {
 
-    components DispatcherP as GlueDispatcher;
+    components DispatcherP;
     components NxtCommandsP;
+    components NxtTransmitterP;
     components new Msp430Uart0C() as Uart0Access;
     components ActiveMessageC;
     components new AMSenderC(AM_CYNAR);
     components new AMReceiverC(AM_CYNAR);
     components BuffersP;
 
-    /* Forwarded from GlueDispatcher */
-    NxtCommands = GlueDispatcher;
-    RadioControl = GlueDispatcher; 
-    RadioAMSend = GlueDispatcher;
-    RadioReceive = GlueDispatcher;
+    /* Forwarded from DispatcherP */
+    NxtCommands = DispatcherP;
+    RadioControl = DispatcherP; 
+    RadioAMSend = DispatcherP;
+    RadioReceive = DispatcherP;
 
-    /* Forwarded to GlueDispatcher */
-    Boot = GlueDispatcher;
+    /* Required by DispatcherP */
+    DispatcherP.SubAMSend -> AMSenderC;
+    DispatcherP.SubReceive -> AMReceiverC;
+    DispatcherP.SubNxtComm -> NxtCommandsP;
+    DispatcherP.NxtTransmitter -> NxtTransmitterP;
 
-    /* Required by GlueDispatcher */
-    GlueDispatcher.SubAMSend -> AMSenderC;
-    GlueDispatcher.SubReceive -> AMReceiverC;
-    GlueDispatcher.SubNxtComm -> NxtCommandsP;
-
-    NxtCommandsP.Resource -> Uart0Access.Resource;
-    NxtCommandsP.UartStream -> Uart0Access.UartStream;
-    NxtCommandsP.Buffers -> BuffersP.Buffers;
+    NxtTransmitterP.Resource -> Uart0Access.Resource;
+    NxtTransmitterP.UartStream -> Uart0Access.UartStream;
 
     /* Active message forwarded */
     RadioAMPacket = ActiveMessageC;

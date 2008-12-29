@@ -20,18 +20,22 @@
  *
  */
 
-#include <stdio.h>
+interface NxtTransmitter {
 
-configuration CynarTestAppC {
-}
-implementation {
+    /* Send the required bunch of data through the uart.
+     *
+     * This code automatically requires the uart resources and releases it
+     * after the transfer has been completed, then it signals the done event
+     *
+     * @param buffer The buffer to be sent
+     * @param len The length of the buffer
+     * @param ack If setted to true, the system waits for an acknowledgment.
+     *
+     * @return SUCCESS if everything works.
+     */
+    command error_t send(uint8_t *buffer, size_t len, bool ack);
 
-    components MainC,
-               DispatcherC,
-               CynarTestP;
-
-    CynarTestP.Boot -> MainC.Boot;
-    CynarTestP.NxtCommands -> DispatcherC.NxtCommands;
+    event void done(uint8_t *buffer, size_t len, error_t err);
 
 }
 
