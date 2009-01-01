@@ -20,9 +20,9 @@
  *
  */
 
-module NxtCommandsP {
+module NxtCommandsForgeP {
 
-    provides interface NxtCommands as NxtComm;
+    provides interface NxtCommandsForge;
     uses interface Buffers;
 
 }
@@ -71,7 +71,7 @@ implementation {
         GET                 = (4<<5),       /* Data retriving */
     } action_t;
 
-    command error_t NxtComm.halt(uint8_t *buffer, size_t len)
+    command error_t NxtCommandsForge.halt(uint8_t *buffer, size_t len)
     {
         if (len < 1)
             return SUCCESS;
@@ -79,7 +79,7 @@ implementation {
         return FAIL;
     }
 
-    command error_t NxtComm.rotateTime(uint8_t *buffer, size_t len, int8_t speed,
+    command error_t NxtCommandsForge.rotateTime(uint8_t *buffer, size_t len, int8_t speed,
                                        uint32_t time, bool brake, uint8_t motors)
     {
         uint32_t offset;
@@ -94,7 +94,7 @@ implementation {
         return SUCCESS;
     }
 
-    command error_t NxtComm.rotateAngle(uint8_t *buffer, size_t len, int8_t speed,
+    command error_t NxtCommandsForge.rotateAngle(uint8_t *buffer, size_t len, int8_t speed,
                                         uint32_t angle, bool brake, uint8_t motors)
     {
         uint32_t offset;
@@ -109,7 +109,7 @@ implementation {
         return SUCCESS;
     }
 
-    command error_t NxtComm.stopRotation(uint8_t *buffer, size_t len, bool brake,
+    command error_t NxtCommandsForge.stopRotation(uint8_t *buffer, size_t len, bool brake,
                                          uint8_t motors)
     {
         if (len < 1)
@@ -118,9 +118,9 @@ implementation {
         return SUCCESS;
     }
 
-    command error_t NxtComm.move(uint8_t *buffer, size_t len, int8_t speed)
+    command error_t NxtCommandsForge.move(uint8_t *buffer, size_t len, int8_t speed)
     {
-         uint32_t offset;
+        uint32_t offset;
 
         offset = 0;
         if (len < 2)
@@ -131,7 +131,7 @@ implementation {
         return FAIL;
     }
 
-    command error_t NxtComm.turn(uint8_t *buffer, size_t len, int8_t speed,
+    command error_t NxtCommandsForge.turn(uint8_t *buffer, size_t len, int8_t speed,
                                  uint32_t degrees)
     {
         uint32_t offset;
@@ -146,7 +146,7 @@ implementation {
         return SUCCESS;
     }
 
-    command error_t NxtComm.stop(uint8_t *buffer, size_t len, bool brake)
+    command error_t NxtCommandsForge.stop(uint8_t *buffer, size_t len, bool brake)
     {
         if (len < 1)
             return FAIL;

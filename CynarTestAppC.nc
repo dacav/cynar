@@ -32,6 +32,7 @@ implementation {
 
     CynarTestP.Boot -> MainC.Boot;
     CynarTestP.NxtCommands -> DispatcherC.NxtCommands;
+    CynarTestP.RadioReceive -> DispatcherC.RadioReceive;
 
 }
 

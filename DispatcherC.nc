@@ -46,7 +46,7 @@ configuration DispatcherC {
 implementation {
 
     components DispatcherP;
-    components NxtCommandsP;
+    components NxtCommandsForgeP;
     components NxtTransmitterP;
     components new Msp430Uart0C() as Uart0Access;
     components ActiveMessageC;
@@ -63,8 +63,8 @@ implementation {
     /* Required by DispatcherP */
     DispatcherP.SubAMSend -> AMSenderC;
     DispatcherP.SubReceive -> AMReceiverC;
-    DispatcherP.SubNxtComm -> NxtCommandsP;
     DispatcherP.NxtTransmitter -> NxtTransmitterP;
+    DispatcherP.Forge -> NxtCommandsForgeP;
 
     NxtTransmitterP.Resource -> Uart0Access.Resource;
     NxtTransmitterP.UartStream -> Uart0Access.UartStream;

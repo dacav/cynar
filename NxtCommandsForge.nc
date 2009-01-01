@@ -20,36 +20,25 @@
  *
  */
 
-module CynarTestP {
+interface NxtCommandsForge {
 
-    uses {
+    command error_t halt(uint8_t *buffer, size_t len);
 
-        interface Boot;
-        interface NxtCommands;
-        interface Receive as RadioReceive;
+    command error_t rotateTime(uint8_t *buffer, size_t len, int8_t speed,
+                               uint32_t time, bool brake, uint8_t motors);
 
-    }
+    command error_t rotateAngle(uint8_t *buffer, size_t len, int8_t speed,
+                                uint32_t angle, bool brake, uint8_t motors);
 
-}
+    command error_t stopRotation(uint8_t *buffer, size_t len, bool brake,
+                                 uint8_t motors);
 
-implementation {
+    command error_t move(uint8_t *buffer, size_t len, int8_t speed);
 
-    event void Boot.booted()
-    {
-        uint8_t buffer[6];
-        call NxtCommands.halt();
-    }
+    command error_t turn(uint8_t *buffer, size_t len, int8_t speed,
+                         uint32_t degrees);
 
-    event void NxtCommands.done(error_t err)
-    {
-
-    }
-
-    event message_t * RadioReceive.receive(message_t *msg, void *payload,
-                                           uint8_t len)
-    {
-        return msg;
-    }
+    command error_t stop(uint8_t *buffer, size_t len, bool brake);
 
 }
 
