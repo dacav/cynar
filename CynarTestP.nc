@@ -27,6 +27,8 @@ module CynarTestP {
         interface Boot;
         interface NxtCommands;
         interface Receive as RadioReceive;
+        interface SplitControl as RadioControl;
+        interface Dispatcher;
 
     }
 
@@ -36,11 +38,10 @@ implementation {
 
     event void Boot.booted()
     {
-        uint8_t buffer[6];
         call NxtCommands.halt();
     }
 
-    event void NxtCommands.done(error_t err)
+    event void NxtCommands.done(error_t err, uint8_t *buffer, size_t len)
     {
 
     }
@@ -51,5 +52,20 @@ implementation {
         return msg;
     }
 
+    event void Dispatcher.inconsistent(disp_status_t x)
+    {
+
+    }
+
+    event void RadioControl.startDone(error_t e)
+    {
+
+    }
+
+    event void RadioControl.stopDone(error_t e)
+    {
+
+    }
 }
+
 

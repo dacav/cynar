@@ -123,7 +123,7 @@ implementation {
             len = ext_len;
             error = ext_error;
         }
-        signal NxtTransmitter.done(buffer, len, error);
+        signal NxtTransmitter.done(error, buffer, len);
     }
 
 }

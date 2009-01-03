@@ -40,6 +40,7 @@ configuration DispatcherC {
         interface Packet as RadioPacket;
         interface AMPacket as RadioAMPacket;
 
+        interface Dispatcher;
     }
 
 }
@@ -59,10 +60,12 @@ implementation {
     RadioControl = DispatcherP; 
     RadioAMSend = DispatcherP;
     RadioReceive = DispatcherP;
+    Dispatcher = DispatcherP;
 
     /* Required by DispatcherP */
     DispatcherP.SubAMSend -> AMSenderC;
     DispatcherP.SubReceive -> AMReceiverC;
+    DispatcherP.SubSplitControl -> ActiveMessageC;
     DispatcherP.NxtTransmitter -> NxtTransmitterP;
     DispatcherP.Forge -> NxtCommandsForgeP;
 

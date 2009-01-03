@@ -30,6 +30,7 @@ module DispatcherP {
         interface SplitControl as RadioControl;
         interface AMSend as RadioAMSend;
         interface Receive as RadioReceive;
+        interface Dispatcher;
 
     }
 
@@ -49,12 +50,14 @@ module DispatcherP {
 implementation {
 
     typedef enum {
-        STATUS_INIT = 0,    /* Initial state */
-        STATUS_BUSY,        /* Required operation in progress */
-        STATUS_IDLE,        /* Radio active, idle */
-        STATUS_RADIO_TX,    /* Radio transmitting */
-        STATUS_UART_TX,     /* Uart transmitting */
-        STATUS_UART_RX,     /* Uart receiving */
+        STATUS_INIT = 0,
+        STATUS_ACTIVATING,
+        STATUS_SHUTDOWN,
+        STATUS_IDLE,
+        STATUS_UART_ONLY,   
+        STATUS_UART_SHARE,
+        STATUS_UART_FINISH,
+        STATUS_INCONSISTENT
     } disp_status_t;
 
     static disp_status_t status = 0;
@@ -70,14 +73,51 @@ implementation {
      */
     #define BUFLEN 6
     static uint8_t buffer[BUFLEN];
+    static bool req_ack;
 
     command error_t RadioControl.start()
     {
-        
+        error_t e;
+
+        atomic {
+            switch (status) {
+                case STATUS_INIT:
+                    status = STATUS_ACTIVATING;
+                    break;
+                case STATUS_ACTIVATING:
+                    return EBUSY;
+                default:
+                    return EALREADY;
+            }
+        }
+        e = call SubSplitControl.start();        
+        if (e != SUCCESS) {
+            atomic status = STATUS_INIT;
+        }
+        return e;
     }
 
     command error_t RadioControl.stop()
     {
+        error_t e;
+
+        atomic {
+            switch (status) {
+                case STATUS_IDLE:
+                    status = STATUS_SHUTDOWN;
+                    break;
+                case STATUS_INIT:
+                    return EALREADY;
+                case STATUS_SHUTDOWN:
+                    return EBUSY;
+                default:
+                    return FAIL;
+            }
+        }
+        e = call SubSplitControl.stop();
+        if (e == EALREADY)
+            atomic status = STATUS_INIT;
+        return e;
     }
 
     command error_t RadioAMSend.send(am_addr_t addr, message_t* msg,
@@ -95,10 +135,62 @@ implementation {
 
     event void SubSplitControl.startDone(error_t error)
     {
+        disp_status_t s;
+
+        if (error == SUCCESS) {
+            atomic {
+                s = status;
+                switch (status) {
+                    case STATUS_ACTIVATING:
+                    case STATUS_UART_FINISH:
+                        status = STATUS_IDLE;
+                        break;
+                    default:
+                        s = status = STATUS_INCONSISTENT;
+                }
+            }
+            if (s == STATUS_INCONSISTENT)
+                signal Dispatcher.inconsistent(s);
+        }
+        signal RadioControl.startDone(error);
     }
 
     event void SubSplitControl.stopDone(error_t error)
     {
+        error_t e;
+        disp_status_t s;
+
+        atomic {
+            s = status;
+            status = STATUS_INCONSISTENT;
+        }
+
+        switch (s) {
+            case STATUS_SHUTDOWN:
+                if (error == SUCCESS) {
+                    atomic status = STATUS_INIT;
+                } else {
+                    atomic status = STATUS_IDLE;
+                }
+                signal RadioControl.stopDone(error);
+                break;
+            case STATUS_UART_SHARE:
+                if (error == SUCCESS) {
+                    e = call NxtTransmitter.send(buffer, BUFLEN, req_ack);
+                    if (e != SUCCESS) {
+                        atomic status = STATUS_UART_FINISH;
+                        signal NxtTransmitter.done(e, NULL, 0);
+                        call SubSplitControl.start();
+                    }
+                } else {
+                    atomic status = STATUS_IDLE;
+                    signal NxtTransmitter.done(FAIL, NULL, 0);
+                }
+                break;
+            default:
+                atomic status = STATUS_INCONSISTENT;
+                signal Dispatcher.inconsistent(s);
+        }
     }
 
     event message_t *SubReceive.receive(message_t *msg, void *payload,
@@ -119,58 +211,67 @@ implementation {
 
     command error_t NxtComm.halt()
     {
-//() != SUCCESS)
-            return FAIL;
         call Forge.halt(buffer, BUFLEN);
+        return SUCCESS;
     }
 
-    command error_t NxtComm.rotateTime(int8_t speed, uint32_t time, bool brake,
-                                       uint8_t motors)
+    command error_t NxtComm.rotateTime(int8_t speed, uint32_t time,
+                                       bool brake, uint8_t motors)
     {
-//() != SUCCESS)
-            return FAIL;
         call Forge.rotateTime(buffer, BUFLEN, speed, time, brake, motors);
     }
 
-    command error_t NxtComm.rotateAngle(int8_t speed, uint32_t angle, bool brake,
-                                        uint8_t motors)
+    command error_t NxtComm.rotateAngle(int8_t speed, uint32_t angle,
+                                        bool brake, uint8_t motors)
     {
-//() != SUCCESS)
-            return FAIL;
         return FAIL;
     }
 
-    command error_t NxtComm.stopRotation(bool brake,
-                                         uint8_t motors)
+    command error_t NxtComm.stopRotation(bool brake, uint8_t motors)
     {
-//() != SUCCESS)
-            return FAIL;
         return FAIL;
     }
 
     command error_t NxtComm.move(int8_t speed)
     {
-//() != SUCCESS)
-            return FAIL;
         return FAIL;
     }
 
     command error_t NxtComm.turn(int8_t speed, uint32_t degrees)
     {
-//() != SUCCESS)
-            return FAIL;
         return FAIL;
     }
 
     command error_t NxtComm.stop(bool brake)
     {
-//() != SUCCESS)
-            return FAIL;
         return FAIL;
     }
 
-    event void NxtTransmitter.done(uint8_t *buf, size_t len, error_t err)
+    event void NxtTransmitter.done(error_t err, uint8_t *buf,
+                                   size_t len)
     {
+        disp_status_t s;
+
+        atomic {
+            s = status;
+            status = STATUS_UART_FINISH;
+        }
+        signal NxtTransmitter.done(err, buf, len);
+        switch (s) {
+            case STATUS_UART_ONLY:
+                atomic status = STATUS_INIT;
+                break;
+            case STATUS_UART_SHARE:
+                call SubSplitControl.start();
+                break;
+            default:
+                signal Dispatcher.inconsistent(s);
+        }
+    }
+
+    command void Dispatcher.reset(void)
+    {
+        atomic status = STATUS_INIT;
     }
 
 }

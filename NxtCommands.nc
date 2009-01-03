@@ -22,22 +22,110 @@
 
 interface NxtCommands {
 
+    /** Launches a halt command
+     *
+     * The "halt" command will shut down the Nxt brick
+     *
+     * @return SUCCESS if the buffer is large enough to contain the command,
+     *         FAIL otherwise
+     */
+
     command error_t halt();
 
+    /** Launches a temporized rotation
+     *
+     * The "rotate time" command will rotate the selected motor(s) for a given
+     * time. The three least significative bits of the motors parameter will
+     * allow the motor selection (Put in OR: 0x01 for the first motor, 0x02 for the
+     * second, 0x04 for the third)
+     *
+     * @param speed The speed value, from -100 to 100
+     * @param time The time (millseconds)
+     * @param brake Set to true in order to brake
+     * @param motors Motors selection
+     * @return SUCCESS if the buffer is large enough to contain the command,
+     *         FAIL otherwise
+     */
     command error_t rotateTime(int8_t speed, uint32_t time, bool brake,
                                uint8_t motors);
 
+    /** Launches an angular rotation
+     *
+     * The "rotate angle" command will rotate the selected motor(s) of a given
+     * angle. The three least significative bits of the motors parameter will
+     * allow the motor selection (Put in OR: 0x01 for the first motor, 0x02 for the
+     * second, 0x04 for the third)
+     *
+     * @param speed The speed value, from -100 to 100
+     * @param angle The angle of rotation (degrees)
+     * @param brake Set to true in order to brake
+     * @param motors Motors selection
+     * @return SUCCESS if the buffer is large enough to contain the command,
+     *         FAIL otherwise
+     */
     command error_t rotateAngle(int8_t speed, uint32_t angle, bool brake,
                                 uint8_t motors);
 
+    /** Launches a stop
+     *
+     * The "stop rotation" command will stop the selected motor(s)
+     * The three least significative bits of the motors parameter will allow
+     * the motor selection (Put in OR: 0x01 for the first motor, 0x02 for the
+     * second, 0x04 for the third)
+     *
+     * @param brake Set to true in order to brake
+     * @param motors Motors selection
+     * @return SUCCESS if the buffer is large enough to contain the command,
+     *         FAIL otherwise
+     */
     command error_t stopRotation(bool brake, uint8_t motors);
 
+    /** Launches a movement
+     *
+     * The "move" command enables a straight movement for the entire NXT. The
+     * movement will continue until the next request involving motors 0 and
+     * 2.
+     *
+     * @param speed The speed value, from -100 to 100
+     * @return SUCCESS if the buffer is large enough to contain the command,
+     *         FAIL otherwise
+     */
     command error_t move(int8_t speed);
 
+    /** Launches a movement
+     *
+     * The "turn" command enables a turning movement for the entire NXT. The
+     * movement will be related to motors 0 and 2.
+     *
+     * @param speed The speed value, from -100 to 100
+     * @param degrees The turning angle
+     * @return SUCCESS if the buffer is large enough to contain the command,
+     *         FAIL otherwise
+     */
     command error_t turn(int8_t speed, uint32_t degrees);
 
+    /** Launches a movement stop command
+     *
+     * The "stop" command will stop motors 0 and 2. It's handy for stopping a
+     * movement required by "move" and "turn" commands. It's equivalent to a
+     * "stop rotation" command involving motors 0 and 2.
+     *
+     * @param brake Set to true in order to brake
+     * @return SUCCESS if the buffer is large enough to contain the command,
+     *         FAIL otherwise
+     */
     command error_t stop(bool brake);
 
-    event void done(error_t err);
+    /** The component has achieved the execution
+     *
+     * @note Depending on the error flag (err) the buffer may be available or
+     *       not.
+     * @param err SUCCESS if the execution succeded
+     * @param buffer The buffer containing returning data (if any)
+     * @param len The buffer's length
+     */
+    event void done(error_t err, uint8_t *buffer, size_t len);
 }
+
+
 

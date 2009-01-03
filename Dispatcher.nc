@@ -20,21 +20,34 @@
  *
  */
 
-#include <stdio.h>
+typedef enum {
+    STATUS_INIT = 0,
+    STATUS_ACTIVATING,
+    STATUS_SHUTDOWN,
+    STATUS_IDLE,
+    STATUS_UART_ONLY,   
+    STATUS_UART_SHARE,
+    STATUS_UART_FINISH
+} disp_status_t;
 
-configuration CynarTestAppC {
-}
-implementation {
+/** Since the dispatcher mechanism uses a two-level indirection, there may be
+ * some inconsistent states. This cases will be signaled through the
+ * inconsistent event.
+ */
+interface Dispatcher {
 
-    components MainC,
-               DispatcherC,
-               CynarTestP;
+    /** Signals an inconsistence
+     *
+     * @param s The previous status
+     */
+    event void inconsistent(disp_status_t s);
 
-    CynarTestP.Boot -> MainC.Boot;
-    CynarTestP.NxtCommands -> DispatcherC.NxtCommands;
-    CynarTestP.RadioReceive -> DispatcherC.RadioReceive;
-    CynarTestP.Dispatcher -> DispatcherC.Dispatcher;
-    CynarTestP.RadioControl -> DispatcherC.RadioControl;
+    /** Resets dispatcher status
+     *
+     * This command will reset the internal status of the Dispatcher
+     * component, but it doesn't fix the problem.
+     */
+    command void reset(void);
 
 }
 

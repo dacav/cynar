@@ -35,7 +35,15 @@ interface NxtTransmitter {
      */
     command error_t send(uint8_t *buffer, size_t len, bool ack);
 
-    event void done(uint8_t *buffer, size_t len, error_t err);
+    /** The component has achieved the execution
+     *
+     * @note Depending on the error flag (err) the buffer may be available or
+     *       not.
+     * @param err SUCCESS if the execution succeded
+     * @param buffer The buffer containing returning data (if any)
+     * @param len The buffer's length
+     */
+     event void done(error_t err, uint8_t *buffer, size_t len);
 
 }
 
