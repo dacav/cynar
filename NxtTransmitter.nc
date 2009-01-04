@@ -29,7 +29,7 @@ interface NxtTransmitter {
      *
      * @param buffer The buffer to be sent
      * @param len The length of the buffer
-     * @param ack If setted to true, the system waits for an acknowledgment.
+     * @param ack If setted to TRUE, the system waits for an acknowledgment.
      *
      * @return SUCCESS if everything works.
      */

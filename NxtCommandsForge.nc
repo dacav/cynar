@@ -45,7 +45,7 @@ interface NxtCommandsForge {
      * @param len The buffer length
      * @param speed The speed value, from -100 to 100
      * @param time The time (millseconds)
-     * @param brake Set to true in order to brake
+     * @param brake Set to TRUE in order to brake
      * @param motors Motors selection
      * @return SUCCESS if the buffer is large enough to contain the command,
      *         FAIL otherwise
@@ -64,7 +64,7 @@ interface NxtCommandsForge {
      * @param len The buffer length
      * @param speed The speed value, from -100 to 100
      * @param angle The angle of rotation (degrees)
-     * @param brake Set to true in order to brake
+     * @param brake Set to TRUE in order to brake
      * @param motors Motors selection
      * @return SUCCESS if the buffer is large enough to contain the command,
      *         FAIL otherwise
@@ -81,7 +81,7 @@ interface NxtCommandsForge {
      *
      * @param buffer The buffer that will contain the command
      * @param len The buffer length
-     * @param brake Set to true in order to brake
+     * @param brake Set to TRUE in order to brake
      * @param motors Motors selection
      * @return SUCCESS if the buffer is large enough to contain the command,
      *         FAIL otherwise
@@ -125,7 +125,7 @@ interface NxtCommandsForge {
      *
      * @param buffer The buffer that will contain the command
      * @param len The buffer length
-     * @param brake Set to true in order to brake
+     * @param brake Set to TRUE in order to brake
      * @return SUCCESS if the buffer is large enough to contain the command,
      *         FAIL otherwise
      */

@@ -35,6 +35,7 @@ implementation {
     CynarTestP.RadioReceive -> DispatcherC.RadioReceive;
     CynarTestP.Dispatcher -> DispatcherC.Dispatcher;
     CynarTestP.RadioControl -> DispatcherC.RadioControl;
+    CynarTestP.RadioAMSend -> DispatcherC.RadioAMSend;
 
 }
 

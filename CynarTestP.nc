@@ -25,9 +25,16 @@ module CynarTestP {
     uses {
 
         interface Boot;
+
+        /* Commands to the nxt */
         interface NxtCommands;
+
+        /* Radio communication */
         interface Receive as RadioReceive;
         interface SplitControl as RadioControl;
+        interface AMSend as RadioAMSend;
+
+        /* Error management for Nxt Dispatcher */
         interface Dispatcher;
 
     }
@@ -63,6 +70,11 @@ implementation {
     }
 
     event void RadioControl.stopDone(error_t e)
+    {
+
+    }
+
+    event void RadioAMSend.sendDone(message_t *msg, error_t err)
     {
 
     }

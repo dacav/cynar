@@ -41,7 +41,7 @@ interface NxtCommands {
      *
      * @param speed The speed value, from -100 to 100
      * @param time The time (millseconds)
-     * @param brake Set to true in order to brake
+     * @param brake Set to TRUE in order to brake
      * @param motors Motors selection
      * @return SUCCESS if the buffer is large enough to contain the command,
      *         FAIL otherwise
@@ -58,7 +58,7 @@ interface NxtCommands {
      *
      * @param speed The speed value, from -100 to 100
      * @param angle The angle of rotation (degrees)
-     * @param brake Set to true in order to brake
+     * @param brake Set to TRUE in order to brake
      * @param motors Motors selection
      * @return SUCCESS if the buffer is large enough to contain the command,
      *         FAIL otherwise
@@ -73,7 +73,7 @@ interface NxtCommands {
      * the motor selection (Put in OR: 0x01 for the first motor, 0x02 for the
      * second, 0x04 for the third)
      *
-     * @param brake Set to true in order to brake
+     * @param brake Set to TRUE in order to brake
      * @param motors Motors selection
      * @return SUCCESS if the buffer is large enough to contain the command,
      *         FAIL otherwise
@@ -110,7 +110,7 @@ interface NxtCommands {
      * movement required by "move" and "turn" commands. It's equivalent to a
      * "stop rotation" command involving motors 0 and 2.
      *
-     * @param brake Set to true in order to brake
+     * @param brake Set to TRUE in order to brake
      * @return SUCCESS if the buffer is large enough to contain the command,
      *         FAIL otherwise
      */
