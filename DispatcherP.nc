@@ -51,17 +51,17 @@ implementation {
 
     typedef enum {
         STATUS_INIT = 0,
-        STATUS_ACTIVATING,
-        STATUS_SHUTDOWN,
-        STATUS_IDLE,
-        STATUS_RADIO_SEND,
-        STATUS_UART_ONLY,
-        STATUS_UART_SHARE,
-        STATUS_UART_FINISH,
-        STATUS_INCONSISTENT
+        STATUS_ACTIVATING = 1,
+        STATUS_SHUTDOWN = 2,
+        STATUS_IDLE = 3,
+        STATUS_RADIO_SEND = 4,
+        STATUS_UART_ONLY = 5,
+        STATUS_UART_SHARE = 6,
+        STATUS_UART_FINISH = 7,
+        STATUS_INCONSISTENT = 8,
     } disp_status_t;
 
-    static disp_status_t status = 0;
+    static disp_status_t status = STATUS_INIT;
 
     /* TODO:
      *
@@ -220,12 +220,12 @@ implementation {
                     e = call NxtTransmitter.send(buffer, BUFLEN, req_ack);
                     if (e != SUCCESS) {
                         atomic status = STATUS_UART_FINISH;
-                        signal NxtTransmitter.done(e, NULL, 0);
+                        signal NxtComm.done(e, NULL, 0);
                         call SubSplitControl.start();
                     }
                 } else {
                     atomic status = STATUS_IDLE;
-                    signal NxtTransmitter.done(FAIL, NULL, 0);
+                    signal NxtComm.done(FAIL, NULL, 0);
                 }
                 break;
             default:
@@ -263,8 +263,8 @@ implementation {
                     break;
                 default:
                     return FALSE;
-                *s = status;
             }
+            *s = status;
         }
         return TRUE;
     }
@@ -277,14 +277,14 @@ implementation {
             e = call NxtTransmitter.send(buffer, BUFLEN, req_ack);
             if (e != SUCCESS) {
                 atomic status = STATUS_INIT;
-                signal NxtTransmitter.done(e, NULL, 0);
+                signal NxtComm.done(e, NULL, 0);
             }
             return e;
         } else {
             e = call SubSplitControl.stop();
             if (e != SUCCESS) {
                 atomic status = STATUS_IDLE;
-                signal NxtTransmitter.done(FAIL, NULL, 0);
+                signal NxtComm.done(FAIL, NULL, 0);
             }
             return e;
         }
@@ -294,8 +294,9 @@ implementation {
     {
         disp_status_t s;
 
-        if (test_nxt_status(&s) == FALSE)
+        if (!test_nxt_status(&s)) {
             return FAIL;
+        }
         call Forge.halt(buffer, BUFLEN);
         req_ack = FALSE;
         return perform_transmission(s);
@@ -306,8 +307,9 @@ implementation {
     {
         disp_status_t s;
 
-        if (test_nxt_status(&s) == FALSE);
+        if (!test_nxt_status(&s)) {
             return FAIL;
+        }
         call Forge.rotateTime(buffer, BUFLEN, speed, time, brake, motors);
         req_ack = FALSE;
         return perform_transmission(s);
@@ -318,8 +320,9 @@ implementation {
     {
         disp_status_t s;
 
-        if (test_nxt_status(&s) == FALSE);
+        if (!test_nxt_status(&s)) {
             return FAIL;
+        }
         call Forge.rotateAngle(buffer, BUFLEN, speed, angle, brake, motors);
         req_ack = FALSE;
         return perform_transmission(s);
@@ -329,8 +332,9 @@ implementation {
     {
         disp_status_t s;
 
-        if (test_nxt_status(&s) == FALSE);
+        if (!test_nxt_status(&s)) {
             return FAIL;
+        }
         call Forge.stopRotation(buffer, BUFLEN, brake, motors);
         req_ack = FALSE;
         return perform_transmission(s);
@@ -340,8 +344,9 @@ implementation {
     {
         disp_status_t s;
 
-        if (test_nxt_status(&s) == FALSE);
+        if (!test_nxt_status(&s)) {
             return FAIL;
+        }
         call Forge.move(buffer, BUFLEN, speed);
         req_ack = FALSE;
         return perform_transmission(s);
@@ -351,8 +356,9 @@ implementation {
     {
         disp_status_t s;
 
-        if (test_nxt_status(&s) == FALSE);
+        if (!test_nxt_status(&s)) {
             return FAIL;
+        }
         call Forge.turn(buffer, BUFLEN, speed, degrees);
         req_ack = FALSE;
         return perform_transmission(s);
@@ -362,8 +368,9 @@ implementation {
     {
         disp_status_t s;
 
-        if (test_nxt_status(&s) == FALSE);
+        if (!test_nxt_status(&s)) {
             return FAIL;
+        }
         call Forge.stop(buffer, BUFLEN, brake);
         req_ack = FALSE;
         return perform_transmission(s);
@@ -378,7 +385,7 @@ implementation {
             s = status;
             status = STATUS_UART_FINISH;
         }
-        signal NxtTransmitter.done(err, buf, len);
+
         switch (s) {
             case STATUS_UART_ONLY:
                 atomic status = STATUS_INIT;
@@ -389,6 +396,7 @@ implementation {
             default:
                 signal Dispatcher.inconsistent(s);
         }
+        signal NxtComm.done(err, buf, len);
     }
 
     command void Dispatcher.reset(void)

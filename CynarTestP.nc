@@ -50,29 +50,31 @@ implementation {
 
     event void Boot.booted()
     {
-        call Leds.led0Toggle();
         phase = 0;
         call Timer0.startOneShot(1000);
     }
 
     event void Timer0.fired(void)
     {
+        error_t e;
+
         phase++;
-        call Leds.led1Toggle();
+        call Leds.set(phase);
         switch (phase) {
         case 1:
-            call NxtCommands.move(100);
+            e = call NxtCommands.move(100);
             break;
         case 2:
-            call NxtCommands.turn(100, 180);
+            e = call NxtCommands.turn(100, 180);
             break;
         case 3:
-            call NxtCommands.move(-100);
+            e = call NxtCommands.move(-100);
             break;
         case 4:
-            call NxtCommands.turn(-100, 180);
+            e = call NxtCommands.turn(-100, 180);
             break;
         }
+
     }
 
     event void NxtCommands.done(error_t err, uint8_t *buffer, size_t len)
@@ -90,7 +92,7 @@ implementation {
             case 3:
                 time = 1000;
                 break;
-            case 4:
+            default:
                 phase = 0;
                 time = 100;
             }

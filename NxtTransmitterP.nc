@@ -24,8 +24,10 @@ module NxtTransmitterP {
 
     provides interface NxtTransmitter;
     uses {
+
         interface Resource;
         interface UartStream;
+
     }
 
 }
@@ -53,16 +55,13 @@ implementation {
                 return FAIL;
             }
             status = STATUS_TRANSMITTING;
+            ext_buffer = buffer;
+            ext_len = len;
+            ext_ack = ack;
         }
         ret = call Resource.request();
         if (ret != SUCCESS) {
             atomic status = STATUS_READY;
-        } else {
-            atomic {
-                ext_buffer = buffer;
-                ext_len = len;
-                ext_ack = ack;
-            }
         }
         return ret;
     }
@@ -84,9 +83,9 @@ implementation {
     {
         bool ack;
 
+        atomic ext_error = error;
         if (error != SUCCESS) {
             call Resource.release();
-            atomic ext_error = error;
             post receiveDone();
         } else {
             atomic {
@@ -95,6 +94,8 @@ implementation {
             }
             if (ack) {
                 call UartStream.receive(buf, len);
+            } else{
+                post receiveDone();
             }
         }
     }
@@ -123,6 +124,7 @@ implementation {
             len = ext_len;
             error = ext_error;
         }
+        call Resource.release();
         signal NxtTransmitter.done(error, buffer, len);
     }
 
