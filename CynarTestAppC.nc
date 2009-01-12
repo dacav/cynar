@@ -28,7 +28,9 @@ implementation {
 
     components MainC,
                DispatcherC,
-               CynarTestP;
+               CynarTestP,
+               LedsC, 
+               new TimerMilliC() as Timer0;
 
     CynarTestP.Boot -> MainC.Boot;
     CynarTestP.NxtCommands -> DispatcherC.NxtCommands;
@@ -36,6 +38,8 @@ implementation {
     CynarTestP.Dispatcher -> DispatcherC.Dispatcher;
     CynarTestP.RadioControl -> DispatcherC.RadioControl;
     CynarTestP.RadioAMSend -> DispatcherC.RadioAMSend;
+    CynarTestP.Timer0 -> Timer0;
+    CynarTestP.Leds -> LedsC;
 
 }
 

@@ -37,20 +37,67 @@ module CynarTestP {
         /* Error management for Nxt Dispatcher */
         interface Dispatcher;
 
+        interface Timer<TMilli> as Timer0;
+        interface Leds;
+
     }
 
 }
 
 implementation {
 
+    static uint8_t phase;
+
     event void Boot.booted()
     {
-        call NxtCommands.halt();
+        call Leds.led0Toggle();
+        phase = 0;
+        call Timer0.startOneShot(1000);
+    }
+
+    event void Timer0.fired(void)
+    {
+        phase++;
+        call Leds.led1Toggle();
+        switch (phase) {
+        case 1:
+            call NxtCommands.move(100);
+            break;
+        case 2:
+            call NxtCommands.turn(100, 180);
+            break;
+        case 3:
+            call NxtCommands.move(-100);
+            break;
+        case 4:
+            call NxtCommands.turn(-100, 180);
+            break;
+        }
     }
 
     event void NxtCommands.done(error_t err, uint8_t *buffer, size_t len)
     {
+        uint32_t time;
 
+        if (err == SUCCESS) {
+            switch (phase) {
+            case 1:
+                time = 1500;
+                break;
+            case 2:
+                time = 100;
+                break;
+            case 3:
+                time = 1000;
+                break;
+            case 4:
+                phase = 0;
+                time = 100;
+            }
+            call Timer0.startOneShot(time);
+        } else {
+            call Leds.led2Toggle();
+        }
     }
 
     event message_t * RadioReceive.receive(message_t *msg, void *payload,

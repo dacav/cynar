@@ -71,6 +71,7 @@ implementation {
 
     NxtTransmitterP.Resource -> Uart0Access.Resource;
     NxtTransmitterP.UartStream -> Uart0Access.UartStream;
+    NxtCommandsForgeP.Buffers -> BuffersP.Buffers;
 
     /* Active message forwarded */
     RadioAMPacket = ActiveMessageC;
