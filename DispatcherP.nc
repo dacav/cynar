@@ -31,6 +31,7 @@ module DispatcherP {
         interface AMSend as RadioAMSend;
         interface Receive as RadioReceive;
         interface Dispatcher;
+        interface Msp430UartConfigure;
 
     }
 
@@ -402,6 +403,30 @@ implementation {
     command void Dispatcher.reset(void)
     {
         atomic status = STATUS_INIT;
+    }
+
+    static msp430_uart_union_config_t config = {
+        {
+            ubr: UBR_1MHZ_9600, 
+            umctl: UMCTL_1MHZ_9600, 
+            ssel: 0x02,
+            pena: 0,
+            pev: 0,
+            spb: 0,
+            clen: 1,
+            listen: 0,
+            mm: 0,
+            ckpl: 0,
+            urxse: 0,
+            urxeie: 0,
+            urxwie: 0,
+            utxe : 1,
+            urxe : 1
+        }
+    };
+
+    async command msp430_uart_union_config_t *Msp430UartConfigure.getConfig() {
+        return &config;
     }
 
 }

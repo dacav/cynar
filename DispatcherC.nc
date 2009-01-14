@@ -69,6 +69,7 @@ implementation {
     DispatcherP.NxtTransmitter -> NxtTransmitterP;
     DispatcherP.Forge -> NxtCommandsForgeP;
 
+    Uart0Access.Msp430UartConfigure -> DispatcherP.Msp430UartConfigure;
     NxtTransmitterP.Resource -> Uart0Access.Resource;
     NxtTransmitterP.UartStream -> Uart0Access.UartStream;
     NxtCommandsForgeP.Buffers -> BuffersP.Buffers;
