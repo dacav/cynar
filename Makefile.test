@@ -1,2 +1,3 @@
 COMPONENT=CynarTestAppC
 include $(MAKERULES)
+CFLAGS += -I./dispatcher -L./dispatcher -DPACKET_LINK
