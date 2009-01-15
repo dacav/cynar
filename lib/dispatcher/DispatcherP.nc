@@ -169,30 +169,33 @@ implementation {
             else
                 status = STATUS_IDLE;
         }
-        if (s != STATUS_RADIO_SEND)
+        if (s != STATUS_RADIO_SEND) {
             signal Dispatcher.inconsistent(s);
-        else
+        } else {
             signal RadioAMSend.sendDone(msg, error);
+        }
     }
 
     event void SubSplitControl.startDone(error_t error)
     {
-        disp_status_t s;
+        disp_status_t s1, s2;
 
         if (error == SUCCESS) {
             atomic {
-                s = status;
+                s1 = status;
                 switch (status) {
                     case STATUS_ACTIVATING:
                     case STATUS_UART_FINISH:
                         status = STATUS_IDLE;
                         break;
                     default:
-                        s = status = STATUS_INCONSISTENT;
+                        status = STATUS_INCONSISTENT;
                 }
+                s2 = status;
             }
-            if (s == STATUS_INCONSISTENT)
-                signal Dispatcher.inconsistent(s);
+            if (s2 == STATUS_INCONSISTENT) {
+                signal Dispatcher.inconsistent(s1);
+            }
         }
         signal RadioControl.startDone(error);
     }
@@ -218,6 +221,7 @@ implementation {
                 break;
             case STATUS_UART_SHARE:
                 if (error == SUCCESS) {
+                    atomic status = s;
                     e = call NxtTransmitter.send(buffer, BUFLEN, req_ack);
                     if (e != SUCCESS) {
                         atomic status = STATUS_UART_FINISH;
@@ -230,7 +234,6 @@ implementation {
                 }
                 break;
             default:
-                atomic status = STATUS_INCONSISTENT;
                 signal Dispatcher.inconsistent(s);
         }
     }

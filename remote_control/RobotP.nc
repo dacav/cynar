@@ -65,7 +65,6 @@ implementation {
     event message_t * RadioReceive.receive(message_t *msg, void *payload,
                                            uint8_t len)
     {
-        call Leds.led2Toggle();
         if (call NxtCommands.exec((uint8_t *)payload, len) != SUCCESS) {
             call Leds.led0On();
         }
@@ -79,7 +78,6 @@ implementation {
 
     event void RadioControl.startDone(error_t e)
     {
-        call Leds.led1Off();
     }
 
     event void RadioControl.stopDone(error_t e)
