@@ -84,17 +84,17 @@ implementation {
         if (err == SUCCESS) {
             switch (phase) {
             case 1:
-                time = 1500;
+                time = 2000;
                 break;
             case 2:
-                time = 100;
+                time = 1000;
                 break;
             case 3:
-                time = 1000;
+                time = 2000;
                 break;
             default:
                 phase = 0;
-                time = 100;
+                time = 1000;
             }
             call Timer0.startOneShot(time);
         } else {
