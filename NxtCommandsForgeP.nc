@@ -64,11 +64,11 @@ implementation {
     #define MSK_MOV_TURN(cmd)       ((cmd) & 0x08)
 
     typedef enum {
-        HALT                = (0<<5),       /* NXT Shutdown */
-        ROTATE              = (1<<5),       /* Generic wheel rotation */
-        STOP                = (2<<5),       /* Generic wheel stop */
-        MOVE                = (3<<5),       /* Robot movement */
-        GET                 = (4<<5),       /* Data retriving */
+        HALT                = (1<<5),       /* NXT Shutdown */
+        ROTATE              = (2<<5),       /* Generic wheel rotation */
+        STOP                = (3<<5),       /* Generic wheel stop */
+        MOVE                = (4<<5),       /* Robot movement */
+        GET                 = (5<<5),       /* Data retriving */
     } action_t;
 
     command error_t NxtCommandsForge.halt(uint8_t *buffer, size_t len)
