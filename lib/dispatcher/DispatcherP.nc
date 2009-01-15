@@ -377,6 +377,18 @@ implementation {
         return perform_transmission(s);
     }
 
+    command error_t NxtComm.exec(uint8_t *cmd, size_t len)
+    {
+        disp_status_t s;
+
+        if (!test_nxt_status(&s)) {
+            return FAIL;
+        }
+        memcpy(buffer, cmd, len < BUFLEN ? len : BUFLEN);
+        req_ack = FALSE;
+        return perform_transmission(s);
+    }
+
     event void NxtTransmitter.done(error_t err, uint8_t *buf,
                                    size_t len)
     {

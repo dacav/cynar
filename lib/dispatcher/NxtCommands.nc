@@ -116,6 +116,22 @@ interface NxtCommands {
      */
     command error_t stop(bool brake);
 
+    /** Launches a remote command
+     *
+     * This primitive allows the component to delegate the command forging
+     * to a different entity. This may be used for remote command
+     * transmission.
+     *
+     * @warning The dispatcher component truncates the command to the first
+     *          6 bytes. This behaviour may change in a future release
+     *
+     * @param cmd The buffer containing the command
+     * @param len The buffer length
+     * @return SUCCESS if the buffer is large enough to contain the command,
+     *         FAIL otherwise
+     */
+    command error_t exec(uint8_t *cmd, size_t len);
+
     /** The component has achieved the execution
      *
      * @note Depending on the error flag (err) the buffer may be available or
