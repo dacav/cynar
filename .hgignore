@@ -1,2 +1,3 @@
 ^build$
 ^.hgignore$
+^.*\.swap$
