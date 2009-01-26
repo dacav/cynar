@@ -70,7 +70,7 @@ implementation {
         uint8_t *payload;
 
         payload = call USBPacket.getPayload(msg_ptr, sizeof(mote_protocol_t));
-        call MoteCommandsForge.baseMove(payload, 100);
+        call MoteCommandsForge.baseTurn((mote_protocol_t *)payload, 75, 80);
         call USBSend.send[myid](myaddr, msg_ptr, sizeof(mote_protocol_t));
     }
 
