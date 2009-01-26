@@ -30,7 +30,7 @@ module MoteCommandsForgeP {
 }
 implementation {
 
-    nx_uint8_t * prepare_base_command(mote_protocol_t *m)
+    nxle_uint8_t * prepare_base_command(mote_protocol_t *m)
     {
         m->header.sender = SENDER_MOTHER;
         m->header.cmd = COMMAND_RPC;
@@ -39,9 +39,9 @@ implementation {
 
     command error_t MoteCommandsForge.baseHalt(mote_protocol_t *msg)
     {
-        nx_uint8_t * buffer;
+        nxle_uint8_t * buffer;
         buffer = prepare_base_command(msg);
-        return call NxtCommandsForge.halt(buffer, RPC_LEN);
+        return call NxtCommandsForge.halt((uint8_t *)buffer, RPC_LEN);
     }
 
     command error_t MoteCommandsForge.baseRotateTime(mote_protocol_t *msg,
@@ -50,9 +50,9 @@ implementation {
                                                      bool brake,
                                                      uint8_t motors)
     {
-        nx_uint8_t * buffer;
+        nxle_uint8_t * buffer;
         buffer = prepare_base_command(msg);
-        return call NxtCommandsForge.rotateTime(buffer, RPC_LEN, speed,
+        return call NxtCommandsForge.rotateTime((uint8_t *)buffer, RPC_LEN, speed,
                                                 time, brake, motors);
     }
 
@@ -62,9 +62,9 @@ implementation {
                                                       bool brake,
                                                       uint8_t motors)
     {
-        nx_uint8_t * buffer;
+        nxle_uint8_t * buffer;
         buffer = prepare_base_command(msg);
-        return call NxtCommandsForge.rotateAngle(buffer, RPC_LEN, speed,
+        return call NxtCommandsForge.rotateAngle((uint8_t *)buffer, RPC_LEN, speed,
                                                  angle, brake, motors);
     }
 
@@ -72,43 +72,44 @@ implementation {
                                                        bool brake,
                                                        uint8_t motors)
     {
-        nx_uint8_t * buffer;
+        nxle_uint8_t * buffer;
         buffer = prepare_base_command(msg);
-        return call NxtCommandsForge.stopRotation(buffer, RPC_LEN, brake,
+        return call NxtCommandsForge.stopRotation((uint8_t *)buffer, RPC_LEN, brake,
                                                   motors);
     }
 
     command error_t MoteCommandsForge.baseMove(mote_protocol_t *msg,
                                                int8_t speed)
     {
-        nx_uint8_t * buffer;
+        nxle_uint8_t * buffer;
         buffer = prepare_base_command(msg);
-        return call NxtCommandsForge.move(buffer, RPC_LEN, speed);
+        return call NxtCommandsForge.move((uint8_t *)buffer, RPC_LEN, speed);
     }
 
     command error_t MoteCommandsForge.baseTurn(mote_protocol_t *msg,
                                                int8_t speed,
                                                uint32_t degrees)
     {
-        nx_uint8_t * buffer;
+        nxle_uint8_t * buffer;
         buffer = prepare_base_command(msg);
-        return call NxtCommandsForge.turn(buffer, RPC_LEN, speed, degrees);
+        return call NxtCommandsForge.turn((uint8_t *)buffer, RPC_LEN, speed, degrees);
     }
 
     command error_t MoteCommandsForge.baseStop(mote_protocol_t *msg,
                                                bool brake)
     {
-        nx_uint8_t * buffer;
+        nxle_uint8_t * buffer;
         buffer = prepare_base_command(msg);
-        return call NxtCommandsForge.stop(buffer, RPC_LEN, brake);
+        return call NxtCommandsForge.stop((uint8_t *)buffer, RPC_LEN, brake);
     }
 
     command error_t MoteCommandsForge.reachThreshold(mote_protocol_t *msg,
                                                      int16_t value)
     {
         msg->header.sender = SENDER_MOTHER;
-        msg->heaer.cmd = COMMAND_REACH_THRESHOLD;
+        msg->header.cmd = COMMAND_REACH_THRESHOLD;
         msg->data.threshold = (nx_uint16_t)value;
+        return SUCCESS;
     }
 
 }

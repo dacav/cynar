@@ -23,21 +23,15 @@
 #ifndef __MOTE_PROTOCOL_H__
 #define __MOTE_PROTOCOL_H__
 
-#if 0
 /* Length of a remote NXT command */
 #define RPC_LEN 6
-#endif
 
 /* Sender identifiers */
-enum {
-    SENDER_MOTHER = 0,
-    SENDER_CHILD = 1
-};
+#define SENDER_MOTHER 0
+#define SENDER_CHILD 1
 
-enum {
-    COMMAND_RPC = 0,
-    COMMAND_REACH_THRESHOLD = 1
-};
+#define COMMAND_RPC 0
+#define COMMAND_REACH_THRESHOLD 1
 
 typedef nx_struct {
     nx_uint8_t sender : 1; 

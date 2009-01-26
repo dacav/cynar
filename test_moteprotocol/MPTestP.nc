@@ -20,6 +20,8 @@
  *
  */
 
+#include "moteprotocol.h"
+
 module MPTestP {
 
     uses {
@@ -32,63 +34,53 @@ module MPTestP {
         interface AMPacket as USBAMPacket;
 
         interface MoteCommandsForge;
+        interface Timer<TMilli> as Timer0;
+        interface Leds;
  
     }
 
 }
 
-#include "moteprotocol.h"
-
 implementation {
 
-    static uint8_t phase;
+    static message_t message, *msg_ptr;
     static am_id_t myid;
     static am_addr_t myaddr;
-    static message_t message;
-    static message_t * msg_ptr;
 
-    event void Boot.booted()
-    {
-        phase = 0;
-        myid = call USBAMPacket.type(msg_ptr);
+    event void Boot.booted() {
+        msg_ptr = &message;
+
+        call USBPacket.clear(msg_ptr);
         myaddr = call USBAMPacket.address();
+        myid = call USBAMPacket.type(msg_ptr);
         call USBAMPacket.setSource(msg_ptr, myaddr);
         call USBControl.start();
     }
 
-    task void send_next(void)
-    {
-        mote_protocol_t *msg;
-
-        msg = (mote_protocol_t *)
-              call USBPacket.getPayload(msg_ptr, sizeof(mote_protocol_t));
-
-        switch (phase) {
-            case 0:
-                call MoteCommandsForge.baseMove(msg, 100);
-                break;
-            case 1:
-                call MoteCommandsForge.baseRotateAngle(msg, 100, 180,
-                                                       TRUE, 1 | 4);
-                break;
-            case 2:
-                call MoteCommandsForge.reachThreshold(msg, 64);
-                break;
-            default:
-                return;
+    event void USBControl.startDone(error_t error) {
+        if (error == SUCCESS) {
+            call Timer0.startOneShot(3000);
+        } else {
+            call Leds.led0Toggle();
         }
-        phase++;
-        call USBSend.send[myid](myaddr, msg_ptr, SIZE);
     }
 
-    event void USBControl.startDone() 
+    event void Timer0.fired()
     {
-        post send_next();
+        uint8_t *payload;
+
+        payload = call USBPacket.getPayload(msg_ptr, sizeof(mote_protocol_t));
+        call MoteCommandsForge.baseMove(payload, 100);
+        call USBSend.send[myid](myaddr, msg_ptr, sizeof(mote_protocol_t));
     }
-        
-    event void USBSend.sendDone[am_id_t id](message_t* msg, error_t error)
-    {
-        post send_next();
+
+    event void USBControl.stopDone(error_t error) {}
+
+    event void USBSend.sendDone[am_id_t id](message_t* msg, error_t error) {
+        if (error == SUCCESS) {
+            call Leds.led1Toggle();
+        } else {
+        }
     }
 
 }

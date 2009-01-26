@@ -29,7 +29,10 @@ implementation {
     components MainC,
                MPTestP,
                NxtCommandsForgeP,
-               MoteCommandsForgeP;
+               MoteCommandsForgeP,
+               BuffersP,
+               LedsC,
+               new TimerMilliC() as Timer0;
                 
     components SerialActiveMessageC as Serial;
 
@@ -38,10 +41,13 @@ implementation {
     MPTestP.USBPacket -> Serial;
     MPTestP.USBAMPacket -> Serial;
     MPTestP.USBSend -> Serial;
+    MPTestP.Timer0 -> Timer0;
+    MPTestP.Leds -> LedsC.Leds;
 
     MPTestP.MoteCommandsForge -> MoteCommandsForgeP;
 
     MoteCommandsForgeP.NxtCommandsForge -> NxtCommandsForgeP;
+    NxtCommandsForgeP.Buffers -> BuffersP.Buffers;
 
 }
 
