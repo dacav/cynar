@@ -53,7 +53,6 @@ implementation {
     components ActiveMessageC;
     components new AMSenderC(AM_CYNAR);
     components new AMReceiverC(AM_CYNAR);
-    components BuffersP;
 
     /* Forwarded from DispatcherP */
     NxtCommands = DispatcherP;
@@ -72,7 +71,6 @@ implementation {
     Uart0Access.Msp430UartConfigure -> DispatcherP.Msp430UartConfigure;
     NxtTransmitterP.Resource -> Uart0Access.Resource;
     NxtTransmitterP.UartStream -> Uart0Access.UartStream;
-    NxtCommandsForgeP.Buffers -> BuffersP.Buffers;
 
     /* Active message forwarded */
     RadioAMPacket = ActiveMessageC;

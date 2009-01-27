@@ -80,7 +80,7 @@ implementation {
     event void RadioControl.startDone(error_t e)
     {
         call Leds.led1Off();
-        call Timer0.startPeriodic(2000);
+        call Timer0.startPeriodic(3000);
     }
 
     event void RadioControl.stopDone(error_t e)

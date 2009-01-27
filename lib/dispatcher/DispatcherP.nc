@@ -20,6 +20,8 @@
  *
  */
 
+#include "nxtprotocol.h"
+
 module DispatcherP {
 
     provides {
@@ -64,17 +66,7 @@ implementation {
 
     static disp_status_t status = STATUS_INIT;
 
-    /* TODO:
-     *
-     *  The current implementation of this module doesn't allow the use of
-     *  different length buffer.
-     *
-     *  A future version may provide a counter for the message length on the
-     *  rs485 channel. 
-     *
-     */
-    #define BUFLEN 6
-    static uint8_t buffer[BUFLEN];
+    static nxt_protocol_t nxt_message;
     static bool req_ack;
 
     command error_t RadioControl.start()
@@ -92,7 +84,7 @@ implementation {
                     return EALREADY;
             }
         }
-        e = call SubSplitControl.start();        
+        e = call SubSplitControl.start();
         if (e != SUCCESS) {
             atomic status = STATUS_INIT;
         }
@@ -222,7 +214,7 @@ implementation {
             case STATUS_UART_SHARE:
                 if (error == SUCCESS) {
                     atomic status = s;
-                    e = call NxtTransmitter.send(buffer, BUFLEN, req_ack);
+                    e = call NxtTransmitter.send((uint8_t *)&nxt_message, NXT_BUFLEN, req_ack);
                     if (e != SUCCESS) {
                         atomic status = STATUS_UART_FINISH;
                         signal NxtComm.done(e, NULL, 0);
@@ -278,7 +270,7 @@ implementation {
         error_t e;
 
         if (s == STATUS_UART_ONLY) {
-            e = call NxtTransmitter.send(buffer, BUFLEN, req_ack);
+            e = call NxtTransmitter.send((uint8_t *)&nxt_message, NXT_BUFLEN, req_ack);
             if (e != SUCCESS) {
                 atomic status = STATUS_INIT;
                 signal NxtComm.done(e, NULL, 0);
@@ -301,7 +293,7 @@ implementation {
         if (!test_nxt_status(&s)) {
             return FAIL;
         }
-        call Forge.halt(buffer, BUFLEN);
+        call Forge.halt(&nxt_message);
         req_ack = FALSE;
         return perform_transmission(s);
     }
@@ -314,7 +306,7 @@ implementation {
         if (!test_nxt_status(&s)) {
             return FAIL;
         }
-        call Forge.rotateTime(buffer, BUFLEN, speed, time, brake, motors);
+        call Forge.rotateTime(&nxt_message, speed, time, brake, motors);
         req_ack = FALSE;
         return perform_transmission(s);
     }
@@ -327,7 +319,7 @@ implementation {
         if (!test_nxt_status(&s)) {
             return FAIL;
         }
-        call Forge.rotateAngle(buffer, BUFLEN, speed, angle, brake, motors);
+        call Forge.rotateAngle(&nxt_message, speed, angle, brake, motors);
         req_ack = FALSE;
         return perform_transmission(s);
     }
@@ -339,7 +331,7 @@ implementation {
         if (!test_nxt_status(&s)) {
             return FAIL;
         }
-        call Forge.stopRotation(buffer, BUFLEN, brake, motors);
+        call Forge.stopRotation(&nxt_message, brake, motors);
         req_ack = FALSE;
         return perform_transmission(s);
     }
@@ -351,7 +343,7 @@ implementation {
         if (!test_nxt_status(&s)) {
             return FAIL;
         }
-        call Forge.move(buffer, BUFLEN, speed);
+        call Forge.move(&nxt_message, speed);
         req_ack = FALSE;
         return perform_transmission(s);
     }
@@ -363,7 +355,7 @@ implementation {
         if (!test_nxt_status(&s)) {
             return FAIL;
         }
-        call Forge.turn(buffer, BUFLEN, speed, degrees);
+        call Forge.turn(&nxt_message, speed, degrees);
         req_ack = FALSE;
         return perform_transmission(s);
     }
@@ -375,7 +367,7 @@ implementation {
         if (!test_nxt_status(&s)) {
             return FAIL;
         }
-        call Forge.stop(buffer, BUFLEN, brake);
+        call Forge.stop(&nxt_message, brake);
         req_ack = FALSE;
         return perform_transmission(s);
     }
@@ -387,7 +379,7 @@ implementation {
         if (!test_nxt_status(&s)) {
             return FAIL;
         }
-        memcpy(buffer, cmd, len < BUFLEN ? len : BUFLEN);
+        memcpy((uint8_t *)&nxt_message, cmd, len < NXT_BUFLEN ? len : NXT_BUFLEN);
         req_ack = FALSE;
         return perform_transmission(s);
     }

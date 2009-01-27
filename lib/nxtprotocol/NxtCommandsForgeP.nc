@@ -20,138 +20,76 @@
  *
  */
 
+#include "nxtprotocol.h"
+
 module NxtCommandsForgeP {
 
     provides interface NxtCommandsForge;
-    uses interface Buffers;
 
 }
 
 implementation {
 
-    typedef enum {
-        NOBRAKE             = (0<<4),       /* Brake disabled */
-        BRAKE               = (1<<4),       /* Brake enabled */
-
-        WHR_TIME            = (0<<3),       /* Rotation for a given time */
-        WHR_ANGLE           = (1<<3),       /* Rotation of a given angle */
-
-        MOV_RUN             = (0<<3),       /* Run forward until new command */
-        MOV_TURN            = (1<<3),       /* Turn */
-    
-        MOTOR_0             = 1,            /* Motor 0 selected */
-        MOTOR_1             = 2,            /* Motor 1 selected */
-        MOTOR_2             = 4,            /* Motor 2 selected */
-
-        MOTOR_MOVEMENT      = 5
-    } variant_t;
-
-    /* Generic mask for actions */
-    #define MSK_ACTION(cmd)         ((cmd) & 0xe0)
-
-    /* Generic brake mask for all movement */
-    #define MSK_BRAKE(cmd)          (((cmd) & 0x10) > 0)
-
-    /* Masks for wheel_rotate */
-    #define MSK_WHR_ANGLE(cmd)      ((cmd) & 0x08)
-
-    /* Masks for motor selection, used for all calls related to motors */
-    #define MSK_SELECT_MOTOR_0(cmd) ((cmd) & 0x01)
-    #define MSK_SELECT_MOTOR_1(cmd) ((cmd) & 0x02)
-    #define MSK_SELECT_MOTOR_2(cmd) ((cmd) & 0x04)
-
-    /* Masks for movement */
-    #define MSK_MOV_TURN(cmd)       ((cmd) & 0x08)
-
-    typedef enum {
-        HALT                = (1<<5),       /* NXT Shutdown */
-        ROTATE              = (2<<5),       /* Generic wheel rotation */
-        STOP                = (3<<5),       /* Generic wheel stop */
-        MOVE                = (4<<5),       /* Robot movement */
-        GET                 = (5<<5),       /* Data retriving */
-    } action_t;
-
-    command error_t NxtCommandsForge.halt(uint8_t *buffer, size_t len)
+    command void NxtCommandsForge.halt(nxt_protocol_t *msg)
     {
-        if (len < 1)
-            return SUCCESS;
-        buffer[0] = HALT;
-        return FAIL;
+        msg->header.action = HALT;
     }
 
-    command error_t NxtCommandsForge.rotateTime(uint8_t *buffer, size_t len, int8_t speed,
-                                       uint32_t time, bool brake, uint8_t motors)
+    command void NxtCommandsForge.rotateTime(nxt_protocol_t *msg,
+                                             int8_t speed, uint32_t time,
+                                             bool brake, uint8_t motors)
     {
-        uint32_t offset;
-
-        if (len < 6)
-            return FAIL;
-        offset = 0;
-        *buffer = ROTATE | motors | WHR_TIME | (brake ? BRAKE : NOBRAKE);
-        buffer++;
-        call Buffers.build(buffer, "bw", &offset, speed);
-        call Buffers.build(buffer, "bw", &offset, time);
-        return SUCCESS;
+        msg->header.action = ROTATE;
+        msg->header.brake = (brake ? BRAKE : NOBRAKE);
+        msg->header.angle_turn = WHR_TIME;
+        msg->header.motors = motors;
+        msg->data.rotate_time.speed = speed;
+        msg->data.rotate_time.time = time;
     }
 
-    command error_t NxtCommandsForge.rotateAngle(uint8_t *buffer, size_t len, int8_t speed,
-                                        uint32_t angle, bool brake, uint8_t motors)
+    command void NxtCommandsForge.rotateAngle(nxt_protocol_t *msg,
+                                              int8_t speed, uint32_t angle,
+                                              bool brake, uint8_t motors)
     {
-        uint32_t offset;
-
-        if (len < 6)
-            return FAIL;
-        offset = 0;
-        *buffer = ROTATE | motors | WHR_ANGLE | (brake ? BRAKE : NOBRAKE);
-        buffer++;
-        call Buffers.build(buffer, "bw", &offset, speed);
-        call Buffers.build(buffer, "bw", &offset, angle);
-        return SUCCESS;
+        msg->header.action = ROTATE;
+        msg->header.brake = (brake ? BRAKE : NOBRAKE);
+        msg->header.angle_turn = WHR_ANGLE;
+        msg->header.motors = motors;
+        msg->data.rotate_angle.speed = speed;
+        msg->data.rotate_angle.angle = angle;
     }
 
-    command error_t NxtCommandsForge.stopRotation(uint8_t *buffer, size_t len, bool brake,
-                                         uint8_t motors)
+    command void NxtCommandsForge.stopRotation(nxt_protocol_t *msg,
+                                               bool brake, uint8_t motors)
     {
-        if (len < 1)
-            return FAIL;
-        buffer[0] = STOP | motors | (brake ? BRAKE : NOBRAKE);
-        return SUCCESS;
+        msg->header.action = STOP;
+        msg->header.brake = (brake ? BRAKE : NOBRAKE);
+        msg->header.motors = motors;
     }
 
-    command error_t NxtCommandsForge.move(uint8_t *buffer, size_t len, int8_t speed)
+    command void NxtCommandsForge.move(nxt_protocol_t *msg, int8_t speed)
     {
-        uint32_t offset;
-
-        offset = 0;
-        if (len < 2)
-            return SUCCESS;
-        *buffer = MOVE | MOTOR_MOVEMENT | MOV_RUN;
-        buffer++;
-        call Buffers.build(buffer, "b", &offset, speed);
-        return FAIL;
+        msg->header.action = MOVE;
+        msg->header.motors = MOTOR_MOVEMENT;
+        msg->header.angle_turn = MOV_RUN;
+        msg->data.move.speed = speed;
     }
 
-    command error_t NxtCommandsForge.turn(uint8_t *buffer, size_t len, int8_t speed,
-                                 uint32_t degrees)
+    command void NxtCommandsForge.turn(nxt_protocol_t *msg, int8_t speed,
+                                       uint32_t degrees)
     {
-        uint32_t offset;
-
-        offset = 0;
-        if (len < 2)
-            return FAIL;
-        *buffer = MOVE | MOTOR_MOVEMENT | MOV_TURN;
-        buffer++;
-        call Buffers.build(buffer, "bw", &offset, speed);
-        call Buffers.build(buffer, "bw", &offset, degrees);
-        return SUCCESS;
+        msg->header.action = MOVE;
+        msg->header.motors = MOTOR_MOVEMENT;
+        msg->header.angle_turn = MOV_TURN;
+        msg->data.turn.speed = speed;
+        msg->data.turn.degrees = degrees;
     }
 
-    command error_t NxtCommandsForge.stop(uint8_t *buffer, size_t len, bool brake)
+    command void NxtCommandsForge.stop(nxt_protocol_t *msg, bool brake)
     {
-        if (len < 1)
-            return FAIL;
-        buffer[0] = STOP | MOTOR_MOVEMENT | (brake ? BRAKE : NOBRAKE);
-        return SUCCESS;
+        msg->header.action = STOP;
+        msg->header.action = MOTOR_MOVEMENT;
+        msg->header.brake = (brake ? BRAKE : NOBRAKE);
     }
 
 }
