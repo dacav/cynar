@@ -35,7 +35,6 @@ implementation {
                new AMSenderC(AM_REMOTE),
                NxtCommandsForgeP,
                RemoteP,
-               BuffersP,
                LedsC, 
                new TimerMilliC() as Timer0;
 
@@ -46,8 +45,6 @@ implementation {
     RemoteP.NxtCommandsForge -> NxtCommandsForgeP;
     RemoteP.Timer0 -> Timer0;
     RemoteP.Leds -> LedsC;
-
-    NxtCommandsForgeP.Buffers -> BuffersP;
 
 }
 

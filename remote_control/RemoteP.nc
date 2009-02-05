@@ -20,6 +20,7 @@
  *
  */
 
+#include "nxtprotocol.h"
 
 module RemoteP {
 
@@ -48,7 +49,7 @@ implementation {
 
     static message_t msg;
     static message_t *msg_ptr;
-    static uint8_t *buffer;
+    static nxt_protocol_t *nxtmsg;
     static uint8_t phase;
 
     event void Boot.booted()
@@ -56,7 +57,8 @@ implementation {
         call Leds.led1On();
         msg_ptr = &msg;
         call RadioPacket.clear(msg_ptr);
-        buffer = call RadioPacket.getPayload(msg_ptr, ROBOT_BUFLEN);
+        nxtmsg = (nxt_protocol_t *)
+                 call RadioPacket.getPayload(msg_ptr, ROBOT_BUFLEN);
         phase = 0;
         call RadioControl.start();
     }
@@ -67,11 +69,11 @@ implementation {
         call Leds.led0Toggle();
         switch (phase & 1) {
         case 0:
-            call NxtCommandsForge.rotateTime(buffer, ROBOT_BUFLEN, 85, 750,
+            call NxtCommandsForge.rotateTime(nxtmsg, 85, 750,
                                              TRUE, 0x1 | 0x4);
             break;
         case 1:
-            call NxtCommandsForge.turn(buffer, ROBOT_BUFLEN, 85, 90);
+            call NxtCommandsForge.turn(nxtmsg, 85, 90);
             break;
         }
         call RadioAMSend.send(TOS_BCAST_ADDR, msg_ptr, ROBOT_BUFLEN);

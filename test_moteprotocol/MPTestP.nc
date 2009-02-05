@@ -70,7 +70,8 @@ implementation {
         uint8_t *payload;
 
         payload = call USBPacket.getPayload(msg_ptr, sizeof(mote_protocol_t));
-        call MoteCommandsForge.baseTurn((mote_protocol_t *)payload, 75, 80);
+        call MoteCommandsForge.baseRotateAngle((mote_protocol_t *)payload,
+                                               100, 180, TRUE, 1 | 4);
         call USBSend.send[myid](myaddr, msg_ptr, sizeof(mote_protocol_t));
     }
 

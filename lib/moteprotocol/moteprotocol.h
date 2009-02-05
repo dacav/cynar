@@ -23,6 +23,8 @@
 #ifndef __MOTE_PROTOCOL_H__
 #define __MOTE_PROTOCOL_H__
 
+#include "nxtprotocol.h"
+
 /* Length of a remote NXT command */
 #define RPC_LEN 6
 
@@ -41,7 +43,7 @@ typedef nx_struct {
 typedef nx_struct {
     mote_protocol_header_t header;
     nx_union {
-        nxle_uint8_t buffer[RPC_LEN];
+        nxt_protocol_t rpc;
         nx_uint16_t threshold;
     } data;
 } mote_protocol_t;

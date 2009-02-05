@@ -24,26 +24,26 @@
 
 interface MoteCommandsForge {
 
-    command error_t baseHalt(mote_protocol_t *msg);
+    command void baseHalt(mote_protocol_t *msg);
 
-    command error_t baseRotateTime(mote_protocol_t *msg,
-                                   int8_t speed, uint32_t time, bool brake,
-                                   uint8_t motors);
+    command void baseRotateTime(mote_protocol_t *msg,
+                                int8_t speed, uint32_t time, bool brake,
+                                uint8_t motors);
 
-    command error_t baseRotateAngle(mote_protocol_t *msg, int8_t speed,
-                                    uint32_t angle, bool brake, uint8_t motors);
+    command void baseRotateAngle(mote_protocol_t *msg, int8_t speed,
+                                 uint32_t angle, bool brake, uint8_t motors);
 
-    command error_t baseStopRotation(mote_protocol_t *msg, bool brake,
-                                     uint8_t motors);
+    command void baseStopRotation(mote_protocol_t *msg, bool brake,
+                                  uint8_t motors);
 
-    command error_t baseMove(mote_protocol_t *msg, int8_t speed);
+    command void baseMove(mote_protocol_t *msg, int8_t speed);
 
-    command error_t baseTurn(mote_protocol_t *msg, int8_t speed,
-                             uint32_t degrees);
+    command void baseTurn(mote_protocol_t *msg, int8_t speed,
+                          uint32_t degrees);
 
-    command error_t baseStop(mote_protocol_t *msg, bool brake);
+    command void baseStop(mote_protocol_t *msg, bool brake);
 
-    command error_t reachThreshold(mote_protocol_t *msg, int16_t value);
+    command void reachThreshold(mote_protocol_t *msg, int16_t value);
 
 }
 

@@ -30,7 +30,6 @@ implementation {
                MPTestP,
                NxtCommandsForgeP,
                MoteCommandsForgeP,
-               BuffersP,
                LedsC,
                new TimerMilliC() as Timer0;
                 
@@ -47,7 +46,6 @@ implementation {
     MPTestP.MoteCommandsForge -> MoteCommandsForgeP;
 
     MoteCommandsForgeP.NxtCommandsForge -> NxtCommandsForgeP;
-    NxtCommandsForgeP.Buffers -> BuffersP.Buffers;
 
 }
 
