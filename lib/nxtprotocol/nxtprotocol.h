@@ -65,11 +65,11 @@ typedef nx_struct {
         nxle_uint8_t padding[NXT_PADDING];
         nx_struct {
             nxle_int8_t speed;
-            nxle_uint8_t time;
+            nxle_uint32_t time;
         } rotate_time;
         nx_struct {
             nxle_int8_t speed;
-            nxle_uint8_t angle;
+            nxle_uint32_t angle;
         } rotate_angle;
         nx_struct {
             nxle_int8_t speed;
