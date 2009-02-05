@@ -31,7 +31,7 @@ configuration DispatcherC {
     provides {
 
         /* Nxt communication (through Uart0) */
-        interface NxtCommands;
+        interface NxtCommands[uint8_t id];
 
         /* Radio communication */
         interface SplitControl as RadioControl;
@@ -55,7 +55,7 @@ implementation {
     components new AMReceiverC(AM_CYNAR);
 
     /* Forwarded from DispatcherP */
-    NxtCommands = DispatcherP;
+    NxtCommands = DispatcherP.NxtComm;
     RadioControl = DispatcherP; 
     RadioAMSend = DispatcherP;
     RadioReceive = DispatcherP;

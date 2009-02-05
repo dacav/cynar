@@ -26,7 +26,7 @@ module DispatcherP {
 
     provides {
 
-        interface NxtCommands as NxtComm;
+        interface NxtCommands as NxtComm[uint8_t id];
 
         /* Radio communication */
         interface SplitControl as RadioControl;
@@ -67,6 +67,7 @@ implementation {
     static disp_status_t status = STATUS_INIT;
 
     static nxt_protocol_t nxt_message;
+    static uint8_t client_id;
     static bool req_ack;
 
     command error_t RadioControl.start()
@@ -196,10 +197,12 @@ implementation {
     {
         error_t e;
         disp_status_t s;
+        uint8_t id;
 
         atomic {
             s = status;
             status = STATUS_INCONSISTENT;
+            id = client_id;
         }
 
         switch (s) {
@@ -214,15 +217,16 @@ implementation {
             case STATUS_UART_SHARE:
                 if (error == SUCCESS) {
                     atomic status = s;
-                    e = call NxtTransmitter.send((uint8_t *)&nxt_message, NXT_BUFLEN, req_ack);
+                    e = call NxtTransmitter.send((uint8_t *)&nxt_message,
+                             NXT_BUFLEN, req_ack);
                     if (e != SUCCESS) {
                         atomic status = STATUS_UART_FINISH;
-                        signal NxtComm.done(e, NULL, 0);
+                        signal NxtComm.done[id](e, NULL, 0);
                         call SubSplitControl.start();
                     }
                 } else {
                     atomic status = STATUS_IDLE;
-                    signal NxtComm.done(FAIL, NULL, 0);
+                    signal NxtComm.done[id](FAIL, NULL, 0);
                 }
                 break;
             default:
@@ -247,7 +251,7 @@ implementation {
     }
 
     /* Returns TRUE if the dispatcher is ready to transmit on the uart */
-    bool test_nxt_status(disp_status_t *s)
+    bool test_nxt_status(disp_status_t *s, uint8_t id)
     {
         atomic {
             switch (status) {
@@ -261,137 +265,144 @@ implementation {
                     return FALSE;
             }
             *s = status;
+            client_id = id;
         }
         return TRUE;
     }
 
-    error_t perform_transmission(disp_status_t s)
+    error_t perform_transmission(disp_status_t s, uint8_t id)
     {
         error_t e;
 
         if (s == STATUS_UART_ONLY) {
-            e = call NxtTransmitter.send((uint8_t *)&nxt_message, NXT_BUFLEN, req_ack);
+            e = call NxtTransmitter.send((uint8_t *)&nxt_message, NXT_BUFLEN,
+                                         req_ack);
             if (e != SUCCESS) {
                 atomic status = STATUS_INIT;
-                signal NxtComm.done(e, NULL, 0);
+                signal NxtComm.done[id](e, NULL, 0);
             }
             return e;
         } else {
             e = call SubSplitControl.stop();
             if (e != SUCCESS) {
                 atomic status = STATUS_IDLE;
-                signal NxtComm.done(FAIL, NULL, 0);
+                signal NxtComm.done[id](FAIL, NULL, 0);
             }
             return e;
         }
     }
 
-    command error_t NxtComm.halt()
+    command error_t NxtComm.halt[uint8_t id]()
     {
         disp_status_t s;
 
-        if (!test_nxt_status(&s)) {
+        if (!test_nxt_status(&s, id)) {
             return FAIL;
         }
         call Forge.halt(&nxt_message);
         req_ack = FALSE;
-        return perform_transmission(s);
+        return perform_transmission(s, id);
     }
 
-    command error_t NxtComm.rotateTime(int8_t speed, uint32_t time,
-                                       bool brake, uint8_t motors)
+    command error_t NxtComm.rotateTime[uint8_t id](int8_t speed, uint32_t time,
+                                                   bool brake, uint8_t motors)
     {
         disp_status_t s;
 
-        if (!test_nxt_status(&s)) {
+        if (!test_nxt_status(&s, id)) {
             return FAIL;
         }
         call Forge.rotateTime(&nxt_message, speed, time, brake, motors);
         req_ack = FALSE;
-        return perform_transmission(s);
+        return perform_transmission(s, id);
     }
 
-    command error_t NxtComm.rotateAngle(int8_t speed, uint32_t angle,
-                                        bool brake, uint8_t motors)
+    command error_t NxtComm.rotateAngle[uint8_t id](int8_t speed,
+                                                    uint32_t angle,
+                                                    bool brake,
+                                                    uint8_t motors)
     {
         disp_status_t s;
 
-        if (!test_nxt_status(&s)) {
+        if (!test_nxt_status(&s, id)) {
             return FAIL;
         }
         call Forge.rotateAngle(&nxt_message, speed, angle, brake, motors);
         req_ack = FALSE;
-        return perform_transmission(s);
+        return perform_transmission(s, id);
     }
 
-    command error_t NxtComm.stopRotation(bool brake, uint8_t motors)
+    command error_t NxtComm.stopRotation[uint8_t id](bool brake,
+                                                     uint8_t motors)
     {
         disp_status_t s;
 
-        if (!test_nxt_status(&s)) {
+        if (!test_nxt_status(&s, id)) {
             return FAIL;
         }
         call Forge.stopRotation(&nxt_message, brake, motors);
         req_ack = FALSE;
-        return perform_transmission(s);
+        return perform_transmission(s, id);
     }
 
-    command error_t NxtComm.move(int8_t speed)
+    command error_t NxtComm.move[uint8_t id](int8_t speed)
     {
         disp_status_t s;
 
-        if (!test_nxt_status(&s)) {
+        if (!test_nxt_status(&s, id)) {
             return FAIL;
         }
         call Forge.move(&nxt_message, speed);
         req_ack = FALSE;
-        return perform_transmission(s);
+        return perform_transmission(s, id);
     }
 
-    command error_t NxtComm.turn(int8_t speed, uint32_t degrees)
+    command error_t NxtComm.turn[uint8_t id](int8_t speed, uint32_t degrees)
     {
         disp_status_t s;
 
-        if (!test_nxt_status(&s)) {
+        if (!test_nxt_status(&s, id)) {
             return FAIL;
         }
         call Forge.turn(&nxt_message, speed, degrees);
         req_ack = FALSE;
-        return perform_transmission(s);
+        return perform_transmission(s, id);
     }
 
-    command error_t NxtComm.stop(bool brake)
+    command error_t NxtComm.stop[uint8_t id](bool brake)
     {
         disp_status_t s;
 
-        if (!test_nxt_status(&s)) {
+        if (!test_nxt_status(&s, id)) {
             return FAIL;
         }
         call Forge.stop(&nxt_message, brake);
         req_ack = FALSE;
-        return perform_transmission(s);
+        return perform_transmission(s, id);
     }
 
-    command error_t NxtComm.exec(uint8_t *cmd, size_t len)
+    command error_t NxtComm.exec[uint8_t id](uint8_t *cmd, size_t len)
     {
         disp_status_t s;
 
-        if (!test_nxt_status(&s)) {
+        if (!test_nxt_status(&s, id)) {
             return FAIL;
         }
         memcpy((uint8_t *)&nxt_message, cmd, len < NXT_BUFLEN ? len : NXT_BUFLEN);
         req_ack = FALSE;
-        return perform_transmission(s);
+        return perform_transmission(s, id);
     }
 
     event void NxtTransmitter.done(error_t err, uint8_t *buf,
                                    size_t len)
     {
         disp_status_t s;
+        uint8_t id;
 
         atomic {
             s = status;
             status = STATUS_UART_FINISH;
+            id = client_id;
         }
 
         switch (s) {
@@ -404,7 +415,7 @@ implementation {
             default:
                 signal Dispatcher.inconsistent(s);
         }
-        signal NxtComm.done(err, buf, len);
+        signal NxtComm.done[id](err, buf, len);
     }
 
     command void Dispatcher.reset(void)

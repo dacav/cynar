@@ -27,7 +27,7 @@ module RobotP {
         interface Boot;
 
         /* Commands to the nxt */
-        interface NxtCommands;
+        interface NxtCommands[uint8_t id];
 
         /* Radio communication */
         interface Receive as RadioReceive;
@@ -46,14 +46,16 @@ module RobotP {
 implementation {
 
     static uint8_t phase;
+    static uint8_t myid;
 
     event void Boot.booted()
     {
+        myid = unique("Robot");
         call Leds.led1On();
         call RadioControl.start();
     }
 
-    event void NxtCommands.done(error_t err, uint8_t *buffer, size_t len)
+    event void NxtCommands.done[uint8_t id](error_t err, uint8_t *buffer, size_t len)
     {
         if (err != SUCCESS) {
             call Leds.led0On();
@@ -65,7 +67,7 @@ implementation {
     event message_t * RadioReceive.receive(message_t *msg, void *payload,
                                            uint8_t len)
     {
-        if (call NxtCommands.exec((uint8_t *)payload, len) != SUCCESS) {
+        if (call NxtCommands.exec[myid]((uint8_t *)payload, len) != SUCCESS) {
             call Leds.led0On();
         }
         return msg;
