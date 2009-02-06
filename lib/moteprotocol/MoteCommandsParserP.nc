@@ -22,16 +22,35 @@
 
 #include "moteprotocol.h"
 
-module MoteCommandsExecutorP {
+module MoteCommandsParserP {
 
-    provides interface MoteCommandsInterpreter;
+    uses {
+        interface NxtCommands;
+    }
+
+    provides {
+        interface MoteCommandsInterpreter;
+    }
 
 }
 implementation {
 
-    command error_t MoteCommandsInterpreter.reachThreshold(int16_t value)
+    command error_t interpret(mote_protocol_t *msg)
     {
+        switch (msg->header.cmd) {
+        case COMMAND_RPC:
+            return call NxtCommands.exec(&msg->data.rpc);
+        case COMMAND_REACH_THRESHOLD:
+            signal MoteCommandsInterpreter.reachThreshold(msg->data.threshold);
+            break;
+        /* HERE add more commands */
+        }
+        return SUCCESS;
+    }
 
+    event void NxtCommands.done(error_t err, uint8_t *buffer, size_t len)
+    {
+        signal MoteCommandsInterpreter.baseCommandExecuted(err, buffer, len);
     }
 
 }
