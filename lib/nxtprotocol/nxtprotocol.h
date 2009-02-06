@@ -57,7 +57,6 @@ typedef nx_struct {
  * the header (1 byte)
  */
 #define NXT_PADDING 5
-#define NXT_BUFLEN 6
 
 typedef nx_struct {
     nxt_protocol_header_t header;

@@ -67,7 +67,7 @@ implementation {
     event message_t * RadioReceive.receive(message_t *msg, void *payload,
                                            uint8_t len)
     {
-        if (call NxtCommands.exec[myid]((uint8_t *)payload, len) != SUCCESS) {
+        if (call NxtCommands.exec[myid]((nxt_protocol_t *)payload) != SUCCESS) {
             call Leds.led0On();
         }
         return msg;
