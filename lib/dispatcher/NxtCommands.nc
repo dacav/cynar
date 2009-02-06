@@ -20,6 +20,8 @@
  *
  */
 
+#include "nxtprotocol.h"
+
 interface NxtCommands {
 
     /** Launches a halt command
@@ -125,12 +127,11 @@ interface NxtCommands {
      * @warning The dispatcher component truncates the command to the first
      *          6 bytes. This behaviour may change in a future release
      *
-     * @param cmd The buffer containing the command
-     * @param len The buffer length
+     * @param cmd The mesage to be executed;
      * @return SUCCESS if the buffer is large enough to contain the command,
      *         FAIL otherwise
      */
-    command error_t exec(uint8_t *cmd, size_t len);
+    command error_t exec(nxt_protocol_t *cmd);
 
     /** The component has achieved the execution
      *

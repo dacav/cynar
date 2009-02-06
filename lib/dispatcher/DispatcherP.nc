@@ -218,7 +218,7 @@ implementation {
                 if (error == SUCCESS) {
                     atomic status = s;
                     e = call NxtTransmitter.send((uint8_t *)&nxt_message,
-                             NXT_BUFLEN, req_ack);
+                             sizeof(nxt_protocol_t), req_ack);
                     if (e != SUCCESS) {
                         atomic status = STATUS_UART_FINISH;
                         signal NxtComm.done[id](e, NULL, 0);
@@ -275,7 +275,8 @@ implementation {
         error_t e;
 
         if (s == STATUS_UART_ONLY) {
-            e = call NxtTransmitter.send((uint8_t *)&nxt_message, NXT_BUFLEN,
+            e = call NxtTransmitter.send((uint8_t *)&nxt_message,
+                                         sizeof(nxt_protocol_t),
                                          req_ack);
             if (e != SUCCESS) {
                 atomic status = STATUS_INIT;
@@ -381,14 +382,14 @@ implementation {
         return perform_transmission(s, id);
     }
 
-    command error_t NxtComm.exec[uint8_t id](uint8_t *cmd, size_t len)
+    command error_t NxtComm.exec[uint8_t id](nxt_protocol_t *cmd)
     {
         disp_status_t s;
 
         if (!test_nxt_status(&s, id)) {
             return FAIL;
         }
-        memcpy((uint8_t *)&nxt_message, cmd, len < NXT_BUFLEN ? len : NXT_BUFLEN);
+        memcpy((uint8_t *)&nxt_message, cmd, sizeof(nxt_protocol_t));
         req_ack = FALSE;
         return perform_transmission(s, id);
     }
