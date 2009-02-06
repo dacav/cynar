@@ -24,15 +24,11 @@
 
 interface MoteCommandsInterpreter {
 
-    command error_t reachThreshold(int16_t value);
+    command error_t interpret(message_t msg);
 
-    event void reachThresholdDone(error_t e);
+    event void reachThreshold(uint16_t thershold);
 
-    /*
-    command error_t abort();
-
-    event void abortDone(error_t e);
-    */
+    event void baseCommandExecuted(error_t err, uint8_t *buffer, size_t len);
 
 }
 
