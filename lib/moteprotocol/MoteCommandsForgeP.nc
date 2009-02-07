@@ -102,11 +102,30 @@ implementation {
     }
 
     command void MoteCommandsForge.reachThreshold(mote_protocol_t *msg,
-                                                  int16_t value)
+                                                  int8_t value)
     {
         msg->header.sender = SENDER_MOTHER;
         msg->header.cmd = COMMAND_REACH_THRESHOLD;
-        msg->data.threshold = (nx_uint16_t)value;
+        msg->data.threshold = (nx_int8_t)value;
+    }
+
+    command void MoteCommandsForge.sync(mote_protocol_t *msg)
+    {
+        msg->header.sender = SENDER_MOTHER;
+        msg->header.cmd = COMMAND_SYNC;
+    }
+
+    command void MoteCommandsForge.ping(mote_protocol_t *msg)
+    {
+        msg->header.sender = SENDER_CHILD;
+        msg->header.cmd = COMMAND_PING;
+    }
+
+    command void MoteCommandsForge.response(mote_protocol_t *msg, int8_t rssi)
+    {
+        msg->header.sender = SENDER_MOTHER;
+        msg->header.cmd = COMMAND_RESP;
+        msg->data.rssi = rssi;
     }
 
 }

@@ -43,7 +43,13 @@ interface MoteCommandsForge {
 
     command void baseStop(mote_protocol_t *msg, bool brake);
 
-    command void reachThreshold(mote_protocol_t *msg, int16_t value);
+    command void reachThreshold(mote_protocol_t *msg, int8_t value);
+
+    command void sync(mote_protocol_t *msg);
+
+    command void ping(mote_protocol_t *msg);
+
+    command void response(mote_protocol_t *msg, int8_t rssi);
 
 }
 

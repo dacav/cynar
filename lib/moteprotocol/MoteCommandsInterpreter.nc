@@ -24,11 +24,19 @@
 
 interface MoteCommandsInterpreter {
 
-    command error_t interpret(message_t msg);
+    command error_t interpret(uint16_t clid, mote_protocol_t *msg);
 
-    event void reachThreshold(uint16_t thershold);
+    event void reachThreshold(uint16_t clid, uint8_t thershold);
 
     event void baseCommandExecuted(error_t err, uint8_t *buffer, size_t len);
+
+    event void sync(uint16_t clid);
+
+    event void ping(uint16_t clid);
+
+    event void response(uint16_t clid, int8_t rssi);
+
+    event void unknown_command(uint16_t id, mote_protocol_t *msg);
 
 }
 

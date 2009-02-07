@@ -25,7 +25,7 @@
 module MoteCommandsParserP {
 
     uses {
-        interface NxtCommands;
+        interface NxtCommands[uint8_t id];
     }
 
     provides {
@@ -35,20 +35,33 @@ module MoteCommandsParserP {
 }
 implementation {
 
-    command error_t interpret(mote_protocol_t *msg)
+    static uint8_t myid = unique(CYNAR_UNIQUE);
+
+    command error_t MoteCommandsInterpreter.interpret(uint16_t id,
+                                                      mote_protocol_t *msg)
     {
         switch (msg->header.cmd) {
         case COMMAND_RPC:
-            return call NxtCommands.exec(&msg->data.rpc);
+            return call NxtCommands.exec[myid](&msg->data.rpc);
         case COMMAND_REACH_THRESHOLD:
-            signal MoteCommandsInterpreter.reachThreshold(msg->data.threshold);
+            signal MoteCommandsInterpreter.reachThreshold(id, msg->data.threshold);
             break;
-        /* HERE add more commands */
+        case COMMAND_SYNC:
+            signal MoteCommandsInterpreter.sync(id);
+            break;
+        case COMMAND_PING:
+            signal MoteCommandsInterpreter.ping(id);
+            break;
+        case COMMAND_RESP:
+            signal MoteCommandsInterpreter.response(id, (int8_t)msg->data.rssi);
+            break;
+        default:
+            signal MoteCommandsInterpreter.unknown_command(id, msg);
         }
         return SUCCESS;
     }
 
-    event void NxtCommands.done(error_t err, uint8_t *buffer, size_t len)
+    event void NxtCommands.done[uint8_t id](error_t err, uint8_t *buffer, size_t len)
     {
         signal MoteCommandsInterpreter.baseCommandExecuted(err, buffer, len);
     }

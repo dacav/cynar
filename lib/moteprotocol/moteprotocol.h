@@ -33,7 +33,10 @@
 #define SENDER_CHILD 1
 
 #define COMMAND_RPC 0
-#define COMMAND_REACH_THRESHOLD 1
+#define COMMAND_SYNC 1
+#define COMMAND_PING 2
+#define COMMAND_RESP 3
+#define COMMAND_REACH_THRESHOLD 4
 
 typedef nx_struct {
     nx_uint8_t sender : 1; 
@@ -44,7 +47,8 @@ typedef nx_struct {
     mote_protocol_header_t header;
     nx_union {
         nxt_protocol_t rpc;
-        nx_uint16_t threshold;
+        nx_int8_t threshold;
+        nx_int8_t rssi;
     } data;
 } mote_protocol_t;
 
