@@ -23,7 +23,7 @@
 #include <stdio.h>
 
 enum {
-    AM_CYNAR = unique("Cynar")
+    AM_CYNAR = unique(CYNAR_UNIQUE)
 };
 
 configuration DispatcherC {

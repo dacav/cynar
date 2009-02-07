@@ -23,7 +23,7 @@
 #include <stdio.h>
 
 enum {
-    AM_REMOTE = unique("Cynar")
+    AM_REMOTE = unique(CYNAR_UNIQUE)
 };
 
 configuration RemoteAppC {

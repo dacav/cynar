@@ -50,7 +50,7 @@ implementation {
 
     event void Boot.booted()
     {
-        myid = unique("Robot");
+        myid = unique(CYNAR_UNIQUE);
         call Leds.led1On();
         call RadioControl.start();
     }
