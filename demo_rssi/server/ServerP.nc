@@ -168,20 +168,20 @@ implementation {
 
     event void Interpreter.sync(uint16_t id)
     {
-        static uint8_t counter = 0;
+//        static uint8_t counter = 0;
         message_t msg;
 
         if (id == call RadioAMPacket.address())
             return;
 
-        counter++;
-        if (counter >= NCLIENTS) {
+//        counter++;
+//        if (counter >= NCLIENTS) {
             /* We have all clients synchronized! */
             atomic status = STATUS_SENDCMD;
             call Leds.led1Toggle();
             call Forge.reachThreshold(prepare_packet(&msg), RSSI_TARGET);
             call RadioAMSend.send(TOS_BCAST_ADDR, &msg, sizeof(mote_protocol_t));
-        }
+//        }
     }
 
     /* Unused: this is client stuff */
