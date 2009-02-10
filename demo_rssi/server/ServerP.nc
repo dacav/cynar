@@ -96,7 +96,7 @@ implementation {
 
         if (len == sizeof(mote_protocol_t)) {
             sender = call RadioAMPacket.source(msg);
-            if (sender > 0 && sender < NCLIENTS) {
+            if (sender > 0 && sender <= NCLIENTS) {
                 rssi = call CC2420Packet.getRssi(msg);
                 atomic clients[sender-1].rssi = rssi;
                 call Interpreter.interpret(sender, payload);
@@ -150,15 +150,24 @@ implementation {
     {
     }
 
+    int debugger(int x) {
+        return (x & 0xf8) >> 3;
+    }
+
     event void Interpreter.ping(uint16_t id)
     {
         int8_t rssi;
         message_t msg;
+        error_t e;
 
-        atomic rssi = clients[id-1].rssi;
         call Leds.led2Toggle();
+        atomic rssi = clients[id-1].rssi;
         call Forge.response(prepare_packet(&msg), rssi);
-        call RadioAMSend.send(id, &msg, sizeof(mote_protocol_t));
+        do {
+            e = call RadioAMSend.send(id, &msg, sizeof(mote_protocol_t));
+        } while (e == EBUSY);
+        call Leds.set(0);
+        call Leds.set(e);
     }
 
     event void Interpreter.unknown_command(uint16_t id,
@@ -168,20 +177,20 @@ implementation {
 
     event void Interpreter.sync(uint16_t id)
     {
-//        static uint8_t counter = 0;
+        static uint8_t counter = 0;
         message_t msg;
 
         if (id == call RadioAMPacket.address())
             return;
 
-//        counter++;
-//        if (counter >= NCLIENTS) {
+        counter++;
+        if (counter >= NCLIENTS) {
             /* We have all clients synchronized! */
             atomic status = STATUS_SENDCMD;
             call Leds.led1Toggle();
             call Forge.reachThreshold(prepare_packet(&msg), RSSI_TARGET);
             call RadioAMSend.send(TOS_BCAST_ADDR, &msg, sizeof(mote_protocol_t));
-//        }
+        }
     }
 
     /* Unused: this is client stuff */
