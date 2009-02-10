@@ -45,6 +45,7 @@ module ServerP {
         interface MoteCommandsForge as Forge;
 
         interface Leds;
+        interface Timer<TMilli> as PingTimer;
 
     }
 
@@ -52,24 +53,8 @@ module ServerP {
 
 implementation {
 
-    typedef struct {
-        struct {
-            uint8_t active : 1;
-            uint8_t padding : 7;
-        } status;
-        int8_t rssi;
-    } client_t;
-
-    typedef enum {
-        STATUS_INIT = 0,
-        STATUS_SYNC,
-        STATUS_SENDCMD,
-        STATUS_ACTIVE,
-    } srv_status_t;
-
-    static uint8_t myid = unique(CYNAR_UNIQUE);
-    static client_t clients[NCLIENTS];
-    static srv_status_t status = STATUS_INIT;
+    static message_t message, *msg_ptr;
+    static const int8_t myid = unique(CYNAR_UNIQUE);
 
     mote_protocol_t *prepare_packet(message_t *msg)
     {
@@ -79,8 +64,23 @@ implementation {
 
     event void Boot.booted()
     {
+        msg_ptr = &message;
+        call Forge.reachThreshold(prepare_packet(msg_ptr), RSSI_TARGET);
         if (call RadioControl.start() != SUCCESS)
             call Leds.led0Toggle();
+    }
+
+    event void PingTimer.fired()
+    {
+        error_t e;
+
+        e = call RadioAMSend.send(TOS_BCAST_ADDR, msg_ptr,
+                                  sizeof(mote_protocol_t));
+        if (e != SUCCESS) {
+            call Leds.led0Toggle();
+        } else {
+            call Leds.led2Toggle();
+        }
     }
 
     event void NxtCommands.done[uint8_t id](error_t err, uint8_t *buffer,
@@ -92,15 +92,10 @@ implementation {
                                            uint8_t len)
     {
         am_addr_t sender;
-        int8_t rssi;
 
         if (len == sizeof(mote_protocol_t)) {
             sender = call RadioAMPacket.source(msg);
-            if (sender > 0 && sender <= NCLIENTS) {
-                rssi = call CC2420Packet.getRssi(msg);
-                atomic clients[sender-1].rssi = rssi;
-                call Interpreter.interpret(sender, payload);
-            }
+            call Interpreter.interpret(sender, payload);
         }
         return msg;
     }
@@ -109,92 +104,34 @@ implementation {
     {
     }
         
-    event void RadioControl.startDone(error_t e)
-    {
-        message_t msg;
-
-        if (e != SUCCESS) {
-            call Leds.led0Toggle();
-            return;
-        }
-        call Leds.led1Toggle();
-        atomic status = STATUS_SYNC;
-        call Forge.sync(prepare_packet(&msg));
-        e = call RadioAMSend.send(TOS_BCAST_ADDR, &msg, sizeof(mote_protocol_t));
-        if (e != SUCCESS)
-            call Leds.led0Toggle();
-    }
-
-    event void RadioControl.stopDone(error_t e)
-    {
-    }
-
     event void RadioAMSend.sendDone(message_t *msg, error_t e)
     {
         if (e != SUCCESS) {
             call Leds.led0Toggle();
         }
-        atomic {
-            if (status == STATUS_SENDCMD) {
-                status = STATUS_ACTIVE;
-            }
-        }
     }
 
-    event void Interpreter.reachThreshold(uint16_t id, uint8_t thershold)
+    event void RadioControl.startDone(error_t e)
     {
-    }
-
-    event void Interpreter.baseCommandExecuted(error_t err, uint8_t *buffer,
-                                               size_t len)
-    {
-    }
-
-    int debugger(int x) {
-        return (x & 0xf8) >> 3;
-    }
-
-    event void Interpreter.ping(uint16_t id)
-    {
-        int8_t rssi;
-        message_t msg;
-        error_t e;
-
-        call Leds.led2Toggle();
-        atomic rssi = clients[id-1].rssi;
-        call Forge.response(prepare_packet(&msg), rssi);
-        do {
-            e = call RadioAMSend.send(id, &msg, sizeof(mote_protocol_t));
-        } while (e == EBUSY);
-        call Leds.set(0);
-        call Leds.set(e);
-    }
-
-    event void Interpreter.unknown_command(uint16_t id,
-                                           mote_protocol_t *msg)
-    {
-    }
-
-    event void Interpreter.sync(uint16_t id)
-    {
-        static uint8_t counter = 0;
-        message_t msg;
-
-        if (id == call RadioAMPacket.address())
+        if (e != SUCCESS) {
+            call Leds.led0Toggle();
             return;
-
-        counter++;
-        if (counter >= NCLIENTS) {
-            /* We have all clients synchronized! */
-            atomic status = STATUS_SENDCMD;
-            call Leds.led1Toggle();
-            call Forge.reachThreshold(prepare_packet(&msg), RSSI_TARGET);
-            call RadioAMSend.send(TOS_BCAST_ADDR, &msg, sizeof(mote_protocol_t));
         }
+        call PingTimer.startPeriodic(PINGTIME);
     }
 
-    /* Unused: this is client stuff */
-    event void Interpreter.response(uint16_t id, int8_t rssi) {}
+    event void Interpreter.response(uint16_t id, int16_t temp)
+    {
+        call Leds.led1Toggle();
+        call NxtCommands.print_temperature[myid](id, temp);
+    }
+
+    event void RadioControl.stopDone(error_t e) {} 
+    event void Interpreter.reachThreshold(uint16_t id, uint8_t thershold) {} 
+    event void Interpreter.baseCommandExecuted(error_t err, uint8_t *buffer, size_t len) {}
+    event void Interpreter.ping(uint16_t id) {}
+    event void Interpreter.unknown_command(uint16_t id, mote_protocol_t *msg) {}
+    event void Interpreter.sync(uint16_t id) {}
 
 }
 

@@ -49,7 +49,7 @@ interface MoteCommandsForge {
 
     command void ping(mote_protocol_t *msg);
 
-    command void response(mote_protocol_t *msg, int8_t rssi);
+    command void response(mote_protocol_t *msg, int16_t temperature);
 
 }
 

@@ -121,11 +121,11 @@ implementation {
         msg->header.cmd = COMMAND_PING;
     }
 
-    command void MoteCommandsForge.response(mote_protocol_t *msg, int8_t rssi)
+    command void MoteCommandsForge.response(mote_protocol_t *msg, int16_t temperature)
     {
         msg->header.sender = SENDER_MOTHER;
         msg->header.cmd = COMMAND_RESP;
-        msg->data.rssi = rssi;
+        msg->data.temperature = temperature;
     }
 
 }

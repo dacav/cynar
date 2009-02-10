@@ -48,7 +48,7 @@ typedef nx_struct {
     nx_union {
         nxt_protocol_t rpc;
         nx_int8_t threshold;
-        nx_int8_t rssi;
+        nx_int16_t temperature;
     } data;
 } mote_protocol_t;
 

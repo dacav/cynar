@@ -36,6 +36,8 @@ module ClientP {
         interface AMPacket as RadioAMPacket;
         interface Packet as RadioPacket;
         interface CC2420Packet;
+        interface Timer<TMilli> as Timeout;
+        interface Timer<TMilli> as Resend;
 
         /* Error management for Nxt Dispatcher */
         interface Dispatcher;
@@ -45,8 +47,8 @@ module ClientP {
         interface MoteCommandsForge as Forge;
 
         interface Leds;
-        interface Timer<TMilli> as PingTimer;
-        interface Random;
+        interface Read<uint16_t>;
+
     }
 
 }
@@ -54,18 +56,18 @@ module ClientP {
 implementation {
 
     typedef enum {
-        STATUS_INIT = 0,
-        STATUS_SYNC,
-        STATUS_WAITING,
-        STATUS_EXECUTING,
-        STATUS_MOVING
+        STATUS_WAITING = 0,
+        STATUS_MOVING,
+        STATUS_REACHED
     } cln_status_t;
 
     static int8_t stored_rssi;
-    static int8_t elab_rssi;
+    static int8_t target_rssi;
     static cln_status_t status;
-    static uint8_t myid = unique(CYNAR_UNIQUE);
     static am_addr_t srv_addr;
+    static int16_t stored_temp;
+    static message_t message;
+    static uint8_t myid = unique(CYNAR_UNIQUE);
 
     mote_protocol_t *prepare_packet(message_t *msg)
     {
@@ -73,100 +75,101 @@ implementation {
         return call RadioPacket.getPayload(msg, sizeof(mote_protocol_t));
     }
 
-    int8_t elaborate_rssi(int8_t r1, int8_t r2)
+    bool keep_moving(void)
     {
-        return (r1 + r2) >> 1;
-    }
+        int8_t e,t;
 
-    bool keep_moving(int8_t rssi)
-    {
-        return TRUE;
-    }
-
-    task void start_reachthreshold(void)
-    {
-        uint32_t rnd;
-
-        rnd = call Random.rand32() % PINGTIME;
-        call PingTimer.startOneShot(rnd);
-    }
-
-    task void start_moving(void)
-    {
-        int8_t rssi;
-
-        atomic rssi = elab_rssi;
-        if (keep_moving(rssi)) {
-            if (call NxtCommands.move[myid](ROBOT_SPEED) != SUCCESS)
-                call Leds.led0Toggle();
-            else
-                call Leds.led2Toggle();
+        atomic {
+            e = stored_rssi;
+            t = target_rssi;
         }
+
+        return e > t;
     }
 
-    task void check_execution(void)
+    void start_moving(void)
     {
-        int8_t rssi;
+        if (!keep_moving())
+            return;
+        call NxtCommands.move[myid](ROBOT_SPEED);
+        atomic status = STATUS_MOVING;
+    }
 
-        atomic rssi = elab_rssi;
-        if (!keep_moving(rssi)) {
-            if (call NxtCommands.stop[myid](TRUE) != SUCCESS)
-                call Leds.led0Toggle();
-            else
-                call Leds.led2Toggle();
+    void check_execution(void)
+    {
+        if (keep_moving())
+            return;
+        call NxtCommands.stop[myid](TRUE);
+        atomic status = STATUS_REACHED;
+
+        call Read.read();
+    }
+
+    event void Read.readDone(error_t e, uint16_t temp) 
+    {
+        if (e != SUCCESS) {
+            call Leds.led0Toggle();
+        }
+        call Resend.startPeriodic(RESEND_PERIOD);
+    }
+
+    task void run_execution(void)
+    {
+        cln_status_t s;
+
+        call Timeout.stop();
+        call Timeout.startOneShot(SECURITY_TIMEOUT);
+        atomic s = status;
+        if (s == STATUS_WAITING) {
+            start_moving();
+        } else {
+            check_execution();
         }
     }
 
     event void Boot.booted()
     {
-        if (call RadioControl.start() != SUCCESS) {
+        if (call RadioControl.start() != SUCCESS)
             call Leds.led0Toggle();
+    }
+
+    event void Timeout.fired()
+    {
+        cln_status_t s;
+
+        atomic s = status;
+        if (s == STATUS_MOVING) {
+            call NxtCommands.stop[myid](TRUE);
+            atomic status = STATUS_WAITING;
         }
     }
 
-    event void PingTimer.fired()
+    event void Resend.fired()
     {
-        message_t msg;
         am_addr_t addr;
+        error_t e;
+        int16_t temp;
+        static uint32_t cnt = 0;
 
-        atomic addr = srv_addr;
-        call Forge.ping(prepare_packet(&msg));
-        if (call RadioAMSend.send(addr, &msg, sizeof(mote_protocol_t))) {
-            call Leds.led0Toggle();
+        if (cnt++ >= NRESEND) {
+            call Resend.stop();
+        } else {
+            atomic {
+                stored_temp = temp;
+                addr = srv_addr;
+                call Forge.response(prepare_packet(&message), temp);
+            }
+            e = call RadioAMSend.send(addr, &message, sizeof(mote_protocol_t));
+            if (e != SUCCESS)
+                call Leds.led0Toggle();
         }
     }
 
     event void NxtCommands.done[uint8_t id](error_t err, uint8_t *buffer,
                                             size_t len)
     {
-        cln_status_t s;
-
-        if (err != SUCCESS) {
+        if (err != SUCCESS)
             call Leds.led0Toggle();
-            return;
-        }
-        call Leds.led2Toggle();
-        atomic {
-            switch (status) {
-            case STATUS_EXECUTING:
-                status = STATUS_MOVING;
-                break;
-            case STATUS_MOVING:
-                status = STATUS_WAITING;
-                break;
-            default:
-                call Leds.led0Toggle();
-            }
-            s = status;
-        }
-        if (s == STATUS_MOVING) {
-            call PingTimer.startOneShot(PINGTIME);
-        }
-        /*
-        else {
-        TODO Here additive stuff
-        }
-        */
     }
 
     event message_t * RadioReceive.receive(message_t *msg, void *payload,
@@ -192,9 +195,8 @@ implementation {
     {
         if (e != SUCCESS) {
             call Leds.led0Toggle();
-        } else {
-            call Leds.led1Toggle();
         }
+        call Leds.led2On();
     }
 
     event void RadioControl.stopDone(error_t e)
@@ -203,71 +205,34 @@ implementation {
 
     event void RadioAMSend.sendDone(message_t *msg, error_t e)
     {
-        if (e != SUCCESS) {
+        if (e != SUCCESS)
             call Leds.led0Toggle();
-            return;
-        }
-        atomic {
-            if (status == STATUS_SYNC)
-                status = STATUS_WAITING;
-        }
         call Leds.led1Toggle();
     }
 
     event void Interpreter.reachThreshold(uint16_t id, uint8_t thershold)
     {
-        atomic {
-            if (status != STATUS_WAITING)
-                return;
-            status = STATUS_EXECUTING;
-        }
-        post start_reachthreshold();
-    }
-
-    event void Interpreter.sync(uint16_t id) 
-    {
-        message_t msg;
-        error_t e;
+        cln_status_t s;
 
         atomic {
-            if (status != STATUS_INIT)
-                return;
-            status = STATUS_SYNC;
+            target_rssi = thershold;
+            s = status;
             srv_addr = id;
         }
-        call Forge.sync(prepare_packet(&msg));
-        e = call RadioAMSend.send(id, &msg, sizeof(mote_protocol_t));
-        if (e != SUCCESS)
-            call Leds.led0Toggle();
+        if (s == STATUS_REACHED)
+            return;
+        call Leds.led2Toggle();
+        post run_execution();
     }
 
-    event void Interpreter.response(uint16_t id, int8_t rssi)
-    {
-        cln_status_t s;
-        int8_t srv_rssi;
-
-        atomic {
-            if (status != STATUS_EXECUTING && status != STATUS_MOVING)
-                return;
-            s = status;
-            srv_rssi = stored_rssi;
-        }
-        srv_rssi = elaborate_rssi(srv_rssi, rssi);
-        atomic elab_rssi = srv_rssi;
-
-        if (s == STATUS_EXECUTING) {
-            post start_moving();
-        } else {
-            post check_execution();
-        }
-    }
-
-    /* Unused: this is server stuff */
-    event void Interpreter.ping(uint16_t id) {}
+    /* Unused */
+    event void Interpreter.response(uint16_t id, int16_t temperature) {}
     event void Interpreter.baseCommandExecuted(error_t err,
                                                uint8_t *buffer,
                                                size_t len) {}
     event void Interpreter.unknown_command(uint16_t id, mote_protocol_t *msg) {}
+    event void Interpreter.ping(uint16_t id) {}
+    event void Interpreter.sync(uint16_t id) {}
 
 }
 

@@ -53,7 +53,7 @@ implementation {
             signal MoteCommandsInterpreter.ping(id);
             break;
         case COMMAND_RESP:
-            signal MoteCommandsInterpreter.response(id, (int8_t)msg->data.rssi);
+            signal MoteCommandsInterpreter.response(id, (int8_t)msg->data.temperature);
             break;
         default:
             signal MoteCommandsInterpreter.unknown_command(id, msg);

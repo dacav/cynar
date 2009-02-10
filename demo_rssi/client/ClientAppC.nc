@@ -29,10 +29,12 @@ implementation {
                ClientP,
                MoteCommandsParserP,
                MoteCommandsForgeP,
+               new Msp430InternalTemperatureC(),
                CC2420PacketC,
                RandomC,
-               LedsC,
-               new TimerMilliC() as PingTimer;
+               new TimerMilliC() as Timeout,
+               new TimerMilliC() as Resend,
+               LedsC;
 
     ClientP.Boot -> MainC.Boot;
 
@@ -44,11 +46,11 @@ implementation {
     ClientP.Dispatcher -> DispatcherC.Dispatcher;
 
     ClientP.CC2420Packet -> CC2420PacketC.CC2420Packet;
+    ClientP.Read -> Msp430InternalTemperatureC.Read;
 
     ClientP.Leds -> LedsC;
-
-    ClientP.PingTimer -> PingTimer;
-    ClientP.Random -> RandomC;
+    ClientP.Timeout -> Timeout;
+    ClientP.Resend -> Resend;
 
     MoteCommandsParserP.NxtCommands -> DispatcherC.NxtCommands;
     ClientP.Interpreter -> MoteCommandsParserP.MoteCommandsInterpreter;

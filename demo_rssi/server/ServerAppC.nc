@@ -30,7 +30,8 @@ implementation {
                MoteCommandsParserP,
                MoteCommandsForgeP,
                CC2420PacketC,
-               LedsC;
+               LedsC,
+               new TimerMilliC() as PingTimer;
 
     ServerP.Boot -> MainC.Boot;
 
@@ -50,5 +51,6 @@ implementation {
     ServerP.NxtCommands -> DispatcherC.NxtCommands;
     ServerP.Forge -> MoteCommandsForgeP.MoteCommandsForge;
 
+    ServerP.PingTimer -> PingTimer.Timer;
 }
 

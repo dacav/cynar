@@ -34,7 +34,7 @@ interface MoteCommandsInterpreter {
 
     event void ping(uint16_t clid);
 
-    event void response(uint16_t clid, int8_t rssi);
+    event void response(uint16_t clid, int16_t rssi);
 
     event void unknown_command(uint16_t id, mote_protocol_t *msg);
 
