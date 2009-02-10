@@ -70,7 +70,6 @@ implementation {
     command void NxtCommandsForge.move(nxt_protocol_t *msg, int8_t speed)
     {
         msg->header.action = MOVE;
-        msg->header.motors = MOTOR_MOVEMENT;
         msg->header.angle_turn = MOV_RUN;
         msg->data.move.speed = speed;
     }
@@ -79,7 +78,6 @@ implementation {
                                        uint32_t degrees)
     {
         msg->header.action = MOVE;
-        msg->header.motors = MOTOR_MOVEMENT;
         msg->header.angle_turn = MOV_TURN;
         msg->data.turn.speed = speed;
         msg->data.turn.degrees = degrees;
@@ -88,7 +86,7 @@ implementation {
     command void NxtCommandsForge.stop(nxt_protocol_t *msg, bool brake)
     {
         msg->header.action = STOP;
-        msg->header.action = MOTOR_MOVEMENT;
+        msg->header.motors = MOTOR_MOVEMENT;
         msg->header.brake = (brake ? BRAKE : NOBRAKE);
     }
 
