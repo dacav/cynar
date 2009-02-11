@@ -44,7 +44,8 @@
 #define ROTATE 2            /* Generic wheel rotation */
 #define STOP 3              /* Generic wheel stop */
 #define MOVE 4              /* Robot movement */
-#define GET 5               /* Data retriving */
+#define PRINT 5             /* Print */
+#define GET 6               /* Data retriving */
 
 typedef nx_struct {
     nx_uint8_t action : 3;
@@ -77,6 +78,10 @@ typedef nx_struct {
             nxle_int8_t speed;
             nxle_uint32_t degrees;
         } turn;
+        nx_struct {
+            nxle_uint16_t id;
+            nxle_int16_t temp;
+        } print;
     } data;
 } nxt_protocol_t;
 

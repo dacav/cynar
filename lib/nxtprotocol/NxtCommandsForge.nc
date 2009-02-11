@@ -125,5 +125,7 @@ interface NxtCommandsForge {
      */
     command void stop(nxt_protocol_t *msg, bool brake);
 
+    command void print_temperature(nxt_protocol_t *msg, uint16_t id,
+                                   int16_t temp);
 }
 

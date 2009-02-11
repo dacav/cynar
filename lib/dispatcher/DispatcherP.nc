@@ -382,6 +382,17 @@ implementation {
         return perform_transmission(s, id);
     }
 
+    command error_t NxtComm.print_temperature[uint8_t id](uint16_t eid, int16_t temp)
+    {
+        disp_status_t s;
+        if (!test_nxt_status(&s, id)) {
+            return FAIL;
+        }
+        call Forge.print_temperature(&nxt_message, eid, temp);
+        req_ack = FALSE;
+        return perform_transmission(s, id);
+    }
+
     command error_t NxtComm.exec[uint8_t id](nxt_protocol_t *cmd)
     {
         disp_status_t s;

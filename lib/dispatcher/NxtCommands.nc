@@ -118,6 +118,8 @@ interface NxtCommands {
      */
     command error_t stop(bool brake);
 
+    command error_t print_temperature(uint16_t id, int16_t temp);
+
     /** Launches a remote command
      *
      * This primitive allows the component to delegate the command forging

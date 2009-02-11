@@ -90,5 +90,13 @@ implementation {
         msg->header.brake = (brake ? BRAKE : NOBRAKE);
     }
 
+    command void NxtCommandsForge.print_temperature(nxt_protocol_t *msg, uint16_t id,
+                                                    int16_t temp)
+    {
+        msg->header.action = PRINT;
+        msg->data.print.id = (nxle_uint16_t)id;
+        msg->data.print.temp = (nxle_int16_t)temp;
+    }
+
 }
 
