@@ -123,7 +123,7 @@ implementation {
     event void Interpreter.response(uint16_t id, int16_t temp)
     {
         call Leds.led1Toggle();
-        call NxtCommands.print_temperature[myid](id, temp);
+        call NxtCommands.print_temperature[myid](id, temp / 100 - 40);
     }
 
     event void RadioControl.stopDone(error_t e) {} 

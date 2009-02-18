@@ -7,6 +7,6 @@ CFLAGS += -I../../lib/dispatcher -L../../lib/dispatcher \
           -DCYNAR_UNIQUE="\"Cynar\"" \
           -DROBOT_SPEED=80 \
           -DRESEND_PERIOD=350 \
-		  -DNRESEND=5 \
+		  -DNRESEND=1 \
           -DSECURITY_TIMEOUT=700
 #          -DPACKET_LINK \

@@ -29,7 +29,8 @@ implementation {
                ClientP,
                MoteCommandsParserP,
                MoteCommandsForgeP,
-               new Msp430InternalTemperatureC(),
+               new SensirionSht11C() as Sensors,
+//               new Msp430InternalTemperatureC(),
                CC2420PacketC,
                RandomC,
                new TimerMilliC() as Timeout,
@@ -46,7 +47,7 @@ implementation {
     ClientP.Dispatcher -> DispatcherC.Dispatcher;
 
     ClientP.CC2420Packet -> CC2420PacketC.CC2420Packet;
-    ClientP.Read -> Msp430InternalTemperatureC.Read;
+    ClientP.Read -> Sensors.Temperature;
 
     ClientP.Leds -> LedsC;
     ClientP.Timeout -> Timeout;

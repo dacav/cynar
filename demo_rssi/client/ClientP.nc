@@ -110,6 +110,7 @@ implementation {
         if (e != SUCCESS) {
             call Leds.led0Toggle();
         }
+        atomic stored_temp = temp / 100 - 40;
         call Resend.startPeriodic(RESEND_PERIOD);
     }
 
@@ -155,7 +156,7 @@ implementation {
             call Resend.stop();
         } else {
             atomic {
-                stored_temp = temp;
+                temp = stored_temp;
                 addr = srv_addr;
                 call Forge.response(prepare_packet(&message), temp);
             }
