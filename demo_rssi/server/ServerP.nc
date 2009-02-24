@@ -65,7 +65,7 @@ implementation {
     event void Boot.booted()
     {
         msg_ptr = &message;
-        call Forge.reachThreshold(prepare_packet(msg_ptr), RSSI_TARGET);
+        call Forge.reachThreshold(prepare_packet(msg_ptr), RSSI_TARGET, 0);
         if (call RadioControl.start() != SUCCESS)
             call Leds.led0Toggle();
     }
@@ -127,7 +127,9 @@ implementation {
     }
 
     event void RadioControl.stopDone(error_t e) {} 
-    event void Interpreter.reachThreshold(uint16_t id, uint8_t thershold) {} 
+    event void Interpreter.reachThreshold(uint16_t id, int8_t thershold,
+                    uint8_t window) {} 
+    event void Interpreter.sendTemperature(uint16_t id) {}
     event void Interpreter.baseCommandExecuted(error_t err, uint8_t *buffer, size_t len) {}
     event void Interpreter.ping(uint16_t id) {}
     event void Interpreter.unknown_command(uint16_t id, mote_protocol_t *msg) {}

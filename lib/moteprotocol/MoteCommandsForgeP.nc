@@ -33,7 +33,6 @@ implementation {
 
     nxt_protocol_t * prepare_base_command(mote_protocol_t *m)
     {
-        m->header.sender = SENDER_MOTHER;
         m->header.cmd = COMMAND_RPC;
         return &m->data.rpc;
     }
@@ -102,28 +101,31 @@ implementation {
     }
 
     command void MoteCommandsForge.reachThreshold(mote_protocol_t *msg,
-                                                  int8_t value)
+                                                  int8_t value,
+                                                  uint8_t window)
     {
-        msg->header.sender = SENDER_MOTHER;
         msg->header.cmd = COMMAND_REACH_THRESHOLD;
-        msg->data.threshold = (nx_int8_t)value;
+        msg->data.threshold.value = (nx_int8_t)value;
+        msg->data.threshold.window = (nx_int8_t)window;
+    }
+
+    command void MoteCommandsForge.sendTemperature(mote_protocol_t *msg)
+    {
+        msg->header.cmd = COMMAND_SEND_TEMPERATURE;
     }
 
     command void MoteCommandsForge.sync(mote_protocol_t *msg)
     {
-        msg->header.sender = SENDER_MOTHER;
         msg->header.cmd = COMMAND_SYNC;
     }
 
     command void MoteCommandsForge.ping(mote_protocol_t *msg)
     {
-        msg->header.sender = SENDER_CHILD;
         msg->header.cmd = COMMAND_PING;
     }
 
     command void MoteCommandsForge.response(mote_protocol_t *msg, int16_t temperature)
     {
-        msg->header.sender = SENDER_MOTHER;
         msg->header.cmd = COMMAND_RESP;
         msg->data.temperature = temperature;
     }

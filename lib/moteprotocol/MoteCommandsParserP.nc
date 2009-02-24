@@ -44,7 +44,10 @@ implementation {
         case COMMAND_RPC:
             return call NxtCommands.exec[myid](&msg->data.rpc);
         case COMMAND_REACH_THRESHOLD:
-            signal MoteCommandsInterpreter.reachThreshold(id, msg->data.threshold);
+            signal MoteCommandsInterpreter.reachThreshold(
+                            id,
+                            msg->data.threshold.value,
+                            msg->data.threshold.window);
             break;
         case COMMAND_SYNC:
             signal MoteCommandsInterpreter.sync(id);
@@ -54,6 +57,9 @@ implementation {
             break;
         case COMMAND_RESP:
             signal MoteCommandsInterpreter.response(id, (int8_t)msg->data.temperature);
+            break;
+        case COMMAND_SEND_TEMPERATURE:
+            signal MoteCommandsInterpreter.sendTemperature(id);
             break;
         default:
             signal MoteCommandsInterpreter.unknown_command(id, msg);

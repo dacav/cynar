@@ -20,36 +20,11 @@
  *
  */
 
-#ifndef __MOTE_PROTOCOL_H__
-#define __MOTE_PROTOCOL_H__
+interface Computation {
 
-#include "nxtprotocol.h"
+    command void input_value(int32_t val);
 
-/* Length of a remote NXT command */
-#define RPC_LEN 6
+    event void output_value(int32_t val);
 
-#define COMMAND_RPC 0
-#define COMMAND_SYNC 1
-#define COMMAND_PING 2
-#define COMMAND_RESP 3
-#define COMMAND_REACH_THRESHOLD 4
-#define COMMAND_SEND_TEMPERATURE 5
-
-typedef nx_struct {
-    nx_uint8_t cmd;
-} mote_protocol_header_t;
-
-typedef nx_struct {
-    mote_protocol_header_t header;
-    nx_union {
-        nxt_protocol_t rpc;
-        nx_struct {
-            nx_int8_t value;
-            nx_uint8_t window;
-        } threshold;
-        nx_int16_t temperature;
-    } data;
-} mote_protocol_t;
-
-#endif /* __MOTE_PROTOCOL_H__ */
+}
 

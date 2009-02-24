@@ -49,6 +49,8 @@ module ClientP {
         interface Leds;
         interface Read<uint16_t>;
 
+        interface Computation as Average;
+
     }
 
 }
@@ -56,76 +58,107 @@ module ClientP {
 implementation {
 
     typedef enum {
-        STATUS_WAITING = 0,
+        STATUS_INIT = 0,
+        STATUS_RECEPTIVE,
+        STATUS_SYNCING,
         STATUS_MOVING,
-        STATUS_REACHED
+        STATUS_STOPPING,
+        STATUS_TURN_MOVING
     } cln_status_t;
 
-    static int8_t stored_rssi;
-    static int8_t target_rssi;
-    static cln_status_t status;
-    static am_addr_t srv_addr;
-    static int16_t stored_temp;
+    static int8_t stored_rssi;  /* Last RSSI value */
+    static struct {
+        int8_t value;   /* Threshold */
+        uint8_t window; /* Threshold window */
+    } target_rssi;
+    static cln_status_t status = STATUS_INIT;   /* Status of the client */
+    static am_addr_t remote_id; /* Remote control identifier */
+    static int16_t stored_temp; /* Last Temperature value */
+    static bool sending = FALSE;    /* The mote is sending temperature */
     static message_t message;
     static uint8_t myid = unique(CYNAR_UNIQUE);
+    static bool backward = FALSE;   /* Backward moving flag */
+
+    void turn_and_go(void)
+    {
+        atomic status = STATUS_TURN_MOVING;
+        call NxtCommands.turn[myid](ROBOT_SPEED, 180);
+    }
+
+    void move_on(void)
+    {
+        atomic status = STATUS_MOVING;
+        call NxtCommands.move[myid](ROBOT_SPEED);
+    }
+
+    void approach(void)
+    {
+        if (backward)
+            turn_and_go();
+        else
+            move_on();
+    }
+
+    void leave(void)
+    {
+        if (backward)
+            move_on();
+        else
+            turn_and_go();
+    }
+
+    void stop(void)
+    {
+        atomic status = STATUS_STOPPING;
+        call NxtCommands.stop[myid](FALSE);
+    }
+
+    event void Average.output_value(int32_t v)
+    {
+        int8_t value;
+        uint8_t window;
+
+        atomic {
+            value = target_rssi.value;
+            window = target_rssi.window;
+        }
+
+        if (v > value) {
+            leave();
+        } else if (v > value - window) {
+            stop();
+        } else {
+            approach();
+        }
+    }
+
+    event void NxtCommands.done[uint8_t id](error_t err, uint8_t *buffer,
+                                            size_t len)
+    {
+        cln_status_t s;
+
+        if (err == SUCCESS) {
+            atomic {
+                s = status;
+            }
+            switch (s) {
+                case STATUS_TURN_MOVING:
+                case STATUS_MOVING:
+                case STATUS_STOPPING:
+                    break;
+                default:
+                    call Leds.led0Toggle();
+            }
+        } else {
+            call Leds.led0Toggle();
+        }
+        atomic status = STATUS_RECEPTIVE;
+    }
 
     mote_protocol_t *prepare_packet(message_t *msg)
     {
         call RadioPacket.clear(msg);
         return call RadioPacket.getPayload(msg, sizeof(mote_protocol_t));
-    }
-
-    bool keep_moving(void)
-    {
-        int8_t e,t;
-
-        atomic {
-            e = stored_rssi;
-            t = target_rssi;
-        }
-
-        return e > t;
-    }
-
-    void start_moving(void)
-    {
-        if (!keep_moving())
-            return;
-        call NxtCommands.move[myid](ROBOT_SPEED);
-        atomic status = STATUS_MOVING;
-    }
-
-    void check_execution(void)
-    {
-        if (keep_moving())
-            return;
-        call NxtCommands.stop[myid](TRUE);
-        atomic status = STATUS_REACHED;
-
-        call Read.read();
-    }
-
-    event void Read.readDone(error_t e, uint16_t temp) 
-    {
-        if (e != SUCCESS) {
-            call Leds.led0Toggle();
-        }
-        atomic stored_temp = temp / 100 - 40;
-        call Resend.startPeriodic(RESEND_PERIOD);
-    }
-
-    task void run_execution(void)
-    {
-        cln_status_t s;
-
-        call Timeout.stop();
-        call Timeout.startOneShot(SECURITY_TIMEOUT);
-        atomic s = status;
-        if (s == STATUS_WAITING) {
-            start_moving();
-        } else {
-            check_execution();
-        }
     }
 
     event void Boot.booted()
@@ -136,41 +169,27 @@ implementation {
 
     event void Timeout.fired()
     {
-        cln_status_t s;
-
-        atomic s = status;
-        if (s == STATUS_MOVING) {
-            call NxtCommands.stop[myid](TRUE);
-            atomic status = STATUS_WAITING;
-        }
     }
 
     event void Resend.fired()
     {
-        am_addr_t addr;
         error_t e;
         int16_t temp;
         static uint32_t cnt = 0;
 
         if (cnt++ >= NRESEND) {
             call Resend.stop();
+            sending = FALSE;
         } else {
             atomic {
                 temp = stored_temp;
-                addr = srv_addr;
                 call Forge.response(prepare_packet(&message), temp);
             }
-            e = call RadioAMSend.send(addr, &message, sizeof(mote_protocol_t));
+            e = call RadioAMSend.send(TOS_BCAST_ADDR, &message,
+                                      sizeof(mote_protocol_t));
             if (e != SUCCESS)
                 call Leds.led0Toggle();
         }
-    }
-
-    event void NxtCommands.done[uint8_t id](error_t err, uint8_t *buffer,
-                                            size_t len)
-    {
-        if (err != SUCCESS)
-            call Leds.led0Toggle();
     }
 
     event message_t * RadioReceive.receive(message_t *msg, void *payload,
@@ -211,31 +230,65 @@ implementation {
         call Leds.led1Toggle();
     }
 
-    event void Interpreter.reachThreshold(uint16_t id, int8_t thershold,
+    event void Interpreter.reachThreshold(uint16_t id, int8_t value,
                                           uint8_t window)
     {
         cln_status_t s;
+        int8_t rssi;
 
         atomic {
-            target_rssi = thershold;
+            if (status != STATUS_RECEPTIVE)
+                return;
             s = status;
-            srv_addr = id;
+            status = STATUS_SYNCING;
+            target_rssi.value = value;
+            target_rssi.window = window;
+            rssi = stored_rssi;
         }
-        if (s == STATUS_REACHED)
-            return;
         call Leds.led2Toggle();
-        post run_execution();
+        call Average.input_value(rssi);
+    }
+
+    event void Interpreter.sync(uint16_t id)
+    {
+        atomic {
+            if (status != STATUS_INIT)
+                return;
+            remote_id = id;
+            status = STATUS_RECEPTIVE;
+        }
+    }
+
+    event void Read.readDone(error_t e, uint16_t temp) 
+    {
+        if (e != SUCCESS) {
+            call Leds.led0Toggle();
+        }
+        atomic stored_temp = temp / 100 - 40;
+        call Resend.startPeriodic(RESEND_PERIOD);
+    }
+
+    event void Interpreter.sendTemperature(uint16_t id)
+    {
+        atomic {
+            if (sending)
+                return;
+            if (status != STATUS_RECEPTIVE)
+                return;
+            if (remote_id != id)
+                return;
+            sending = TRUE;
+        }
+        call Read.read();
     }
 
     /* Unused */
-    event void Interpreter.sendTemperature(uint16_t id) {}
     event void Interpreter.response(uint16_t id, int16_t temperature) {}
     event void Interpreter.baseCommandExecuted(error_t err,
                                                uint8_t *buffer,
                                                size_t len) {}
     event void Interpreter.unknown_command(uint16_t id, mote_protocol_t *msg) {}
     event void Interpreter.ping(uint16_t id) {}
-    event void Interpreter.sync(uint16_t id) {}
 
 }
 
