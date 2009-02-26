@@ -81,8 +81,10 @@ implementation {
 
     void turn_and_go(void)
     {
-        atomic status = STATUS_TURN_MOVING;
-        call NxtCommands.turn[myid](ROBOT_SPEED, 180);
+//        atomic status = STATUS_TURN_MOVING;
+//        call NxtCommands.turn[myid](ROBOT_SPEED, 180);
+        atomic status = STATUS_MOVING;
+        call NxtCommands.move[myid](ROBOT_SPEED);
     }
 
     void move_on(void)
@@ -118,6 +120,7 @@ implementation {
         int8_t value;
         uint8_t window;
 
+        call Leds.led1Toggle();
         atomic {
             value = target_rssi.value;
             window = target_rssi.window;
@@ -125,11 +128,16 @@ implementation {
 
         if (v > value) {
             leave();
-        } else if (v > value - window) {
+        } else { // if (v > value - window) {
             stop();
-        } else {
+        }
+
+/*
+        else {
             approach();
         }
+*/
+        atomic status = STATUS_RECEPTIVE;
     }
 
     event void NxtCommands.done[uint8_t id](error_t err, uint8_t *buffer,
@@ -143,16 +151,15 @@ implementation {
             }
             switch (s) {
                 case STATUS_TURN_MOVING:
-                case STATUS_MOVING:
-                case STATUS_STOPPING:
-                    break;
+                    backward = !backward;
+                    move_on();
+                    return;
                 default:
-                    call Leds.led0Toggle();
+                    break;
             }
         } else {
             call Leds.led0Toggle();
         }
-        atomic status = STATUS_RECEPTIVE;
     }
 
     mote_protocol_t *prepare_packet(message_t *msg)
@@ -227,7 +234,6 @@ implementation {
     {
         if (e != SUCCESS)
             call Leds.led0Toggle();
-        call Leds.led1Toggle();
     }
 
     event void Interpreter.reachThreshold(uint16_t id, int8_t value,
@@ -245,7 +251,6 @@ implementation {
             target_rssi.window = window;
             rssi = stored_rssi;
         }
-        call Leds.led2Toggle();
         call Average.input_value(rssi);
     }
 

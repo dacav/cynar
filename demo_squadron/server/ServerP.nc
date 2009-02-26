@@ -71,6 +71,7 @@ implementation {
     static cln_status_t clients[NCLIENTS];
     static am_addr_t remote_id;
     static bool receiving_temp = FALSE;
+    static bool moving = FALSE;
 
     /* Clears the packet and returns the payload */
     mote_protocol_t *prepare_packet(message_t *msg)
@@ -91,29 +92,45 @@ implementation {
     {
         uint32_t i;
         uint16_t temp;
-        cln_status_t cln;
+        cln_status_t *cln;
+        bool active;
 
         call Beacon.stop();
         for (i=0; i<NCLIENTS; i++) {
             cln = clients + i;
+            atomic active = cln->active;
+            if (!active)
+                continue;
             atomic {
-                if (!cln->active)
-                    continue;
                 temp = cln->temperature;
                 cln->active = 0;
             }
             call NxtCommands.print_temperature[myid](i + 1, temp);
         }
-        call Beacon.start();
+        call Beacon.startPeriodic(PINGTIME);
         atomic receiving_temp = FALSE;
     }
 
     task void start_reposition()
     {
+        atomic {
+            if (moving)
+                return;
+            moving = TRUE;
+        }
+        if (call NxtCommands.move[myid](ROBOT_SPEED) != SUCCESS)
+            call Leds.led0Toggle();
     }
 
     task void stop_reposition()
     {
+        atomic {
+            if (!moving)
+                return;
+            moving = FALSE;
+        }
+        if (call NxtCommands.stop[myid](FALSE) != SUCCESS) 
+            call Leds.led0Toggle();
     }
 
     event void Boot.booted()
@@ -128,7 +145,8 @@ implementation {
     {
         error_t e;
 
-        if (!Beacon.isRunning())
+        call Leds.led2Toggle();
+        if (!call Beacon.isRunning())
             return;
 
         e = call RadioAMSend.send(TOS_BCAST_ADDR, msg_ptr,
@@ -152,6 +170,8 @@ implementation {
                                            uint8_t len)
     {
         am_addr_t sender;
+
+        call Leds.led1Toggle();
 
         if (len == sizeof(mote_protocol_t)) {
             sender = call RadioAMPacket.source(msg);
@@ -215,14 +235,18 @@ implementation {
             case STATUS_INIT:
                 atomic remote_id = id;
             case STATUS_REPOSITIONING:
-                s = STATUS_BEACON;
-                call Beacon.start();
+                atomic status = STATUS_BEACON;
+                post stop_reposition();
+                call Beacon.startPeriodic(PINGTIME);
                 break;
             case STATUS_BEACON:
-                s = STATUS_REPOSITIONING;
+                atomic status = STATUS_REPOSITIONING;
+                call Beacon.stop();
+                post start_reposition();
                 break;
+            default:
+                call Leds.led0Toggle();
         }
-        atomic status = s;
     }
 
     event void Interpreter.sendTemperature(uint16_t id)

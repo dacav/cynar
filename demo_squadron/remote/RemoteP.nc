@@ -20,6 +20,8 @@
  *
  */
 
+#include "UserButton.h"
+
 module RemoteP {
 
     uses {
@@ -30,6 +32,8 @@ module RemoteP {
         interface Packet as RadioPacket;
         interface MoteCommandsForge as Forge;
         interface Leds;
+        interface Notify<button_state_t>;
+        interface Timer<TMilli> as Ping;
 
     }
 
@@ -56,6 +60,8 @@ implementation {
         if (e != SUCCESS) {
             call Leds.led0Toggle();
         }
+        call Leds.led2Toggle();
+        call RadioControl.stop();
     }
 
     event void RadioControl.startDone(error_t e)
@@ -71,10 +77,28 @@ implementation {
                         sizeof(mote_protocol_t));
         if (e != SUCCESS) {
             call Leds.led0Toggle();
+        } else {
+            call Ping.startPeriodic(1000); 
         }
     }
 
-    event void RadioControl.stopDone(error_t e) {} 
+    event void Notify.notify(button_state_t x)
+    {
+        if (x == BUTTON_PRESSED)
+           call Ping.startPeriodic(1000); 
+        else
+           call Ping.stop();
+    }
+
+    event void Ping.fired()
+    {
+        call Leds.led1Toggle();
+        if (call RadioControl.start() != SUCCESS)
+            call Leds.led0Toggle();
+    }
+
+    event void RadioControl.stopDone(error_t e) {
+    } 
 
 }
 

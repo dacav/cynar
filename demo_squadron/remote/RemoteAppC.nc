@@ -28,6 +28,8 @@ implementation {
                ActiveMessageC,
                RemoteP,
                MoteCommandsForgeP,
+               UserButtonC,
+               new TimerMilliC() as Ping,
                LedsC;
 
     RemoteP.Boot -> MainC.Boot;
@@ -36,6 +38,8 @@ implementation {
     RemoteP.RadioAMSend -> ActiveMessageC.AMSend;
     RemoteP.Leds -> LedsC;
     RemoteP.Forge -> MoteCommandsForgeP.MoteCommandsForge;
+    RemoteP.Notify -> UserButtonC.Notify;
+    RemoteP.Ping -> Ping;
 
 }
 
