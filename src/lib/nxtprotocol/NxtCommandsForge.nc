@@ -22,6 +22,11 @@
 
 #include "nxtprotocol.h"
 
+/** Interface for commands forging.
+ *
+ * Commands are encoded into nxt_protocol_t structure, so an allocated
+ * pointer must be provided by the caller.
+ */
 interface NxtCommandsForge {
 
     /** Encodes a halt command
@@ -46,8 +51,6 @@ interface NxtCommandsForge {
      * @param time The time (millseconds)
      * @param brake Set to TRUE in order to brake
      * @param motors Motors selection
-     * @return SUCCESS if the buffer is large enough to contain the command,
-     *         FAIL otherwise
      */
     command void rotateTime(nxt_protocol_t *msg, int8_t speed,
                             uint32_t time, bool brake, uint8_t motors);
@@ -64,11 +67,9 @@ interface NxtCommandsForge {
      * @param angle The angle of rotation (degrees)
      * @param brake Set to TRUE in order to brake
      * @param motors Motors selection
-     * @return SUCCESS if the buffer is large enough to contain the command,
-     *         FAIL otherwise
      */
-     command void rotateAngle(nxt_protocol_t *msg, int8_t speed,
-                                uint32_t angle, bool brake, uint8_t motors);
+    command void rotateAngle(nxt_protocol_t *msg, int8_t speed,
+                              uint32_t angle, bool brake, uint8_t motors);
 
     /** Encodes a stop
      *
@@ -80,10 +81,8 @@ interface NxtCommandsForge {
      * @param msg The message to edit
      * @param brake Set to TRUE in order to brake
      * @param motors Motors selection
-     * @return SUCCESS if the buffer is large enough to contain the command,
-     *         FAIL otherwise
      */
-     command void stopRotation(nxt_protocol_t *msg, bool brake,
+    command void stopRotation(nxt_protocol_t *msg, bool brake,
                                   uint8_t motors);
     /** Encodes a movement
      *
@@ -93,10 +92,8 @@ interface NxtCommandsForge {
      *
      * @param msg The message to edit
      * @param speed The speed value, from -100 to 100
-     * @return SUCCESS if the buffer is large enough to contain the command,
-     *         FAIL otherwise
      */
-     command void move(nxt_protocol_t *msg, int8_t speed);
+    command void move(nxt_protocol_t *msg, int8_t speed);
 
     /** Encodes a movement
      *
@@ -106,8 +103,6 @@ interface NxtCommandsForge {
      * @param msg The message to edit
      * @param speed The speed value, from -100 to 100
      * @param degrees The turning angle
-     * @return SUCCESS if the buffer is large enough to contain the command,
-     *         FAIL otherwise
      */
     command void turn(nxt_protocol_t *msg, int8_t speed,
                          uint32_t degrees);
@@ -120,11 +115,14 @@ interface NxtCommandsForge {
      *
      * @param msg The message to edit
      * @param brake Set to TRUE in order to brake
-     * @return SUCCESS if the buffer is large enough to contain the command,
-     *         FAIL otherwise
      */
     command void stop(nxt_protocol_t *msg, bool brake);
 
+    /** Encodes a print temperature command
+     *
+     * @warning This command has been built in order to satisfy a
+     *          demo application, and it's quite dirty, so it's deprecated.
+     */
     command void print_temperature(nxt_protocol_t *msg, uint16_t id,
                                    int16_t temp);
 }
